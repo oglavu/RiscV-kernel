@@ -21,8 +21,9 @@ namespace interruptHandlers {
         }
 
         // interrupt from UserMode(0x08) or KernelMode(0x09)
-        uint64 sepc = RiscV::sepcR() + 4;
-        uint64 sstatus = RiscV::sstatusR();
+        // retVal is passed implicitly by changing a0 on stack
+        uint64 volatile sepc = RiscV::sepcR() + 4;
+        uint64 volatile sstatus = RiscV::sstatusR();
         uint64 codeOp = RiscV::a0R();
         uint64 retVal;
 
@@ -32,14 +33,14 @@ namespace interruptHandlers {
                 __asm__ volatile ("mv %0, a1" : "=r" (size));
                 retVal = (uint64) MemoryAllocator::mem_alloc(size);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
-                __asm__ volatile ("sd t0, 80(x8)" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(sp)");
                 break;
             case (uint64) RiscV::CodeOps::MEM_FREE:
                 void *ptr;
                 __asm__ volatile ("mv %0, a1" : "=r"(ptr));
                 retVal = MemoryAllocator::mem_free(ptr);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
-                __asm__ volatile ("sd t0, 80(x8)" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(sp)");
                 break;
             default:
                 break;

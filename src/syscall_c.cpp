@@ -11,7 +11,7 @@ void* mem_alloc(size_t size) {
 
     __asm__ volatile ("ecall");
 
-    uint64 retVal;
+    uint64 volatile retVal;
     __asm__ volatile ("mv %0, a0" : "=r"(retVal));
     return (void*) retVal;
 }
