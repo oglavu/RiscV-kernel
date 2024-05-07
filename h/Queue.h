@@ -24,7 +24,6 @@ private:
     };
 
     uint64 lastNodeAddr = 0;
-    char cntNode = 0;
 
     Node* head;
     Node* last;

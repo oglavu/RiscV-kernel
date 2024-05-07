@@ -20,7 +20,7 @@ int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable | 0x01);
 
-
+    Scheduler s;
 
     TCB* th1 = new TCB(55);
     TCB* th2 = new TCB(2);
@@ -28,22 +28,18 @@ int main() {
     TCB* th4 = new TCB(4);
     TCB* th5 = new TCB(5);
 
-    Scheduler::put(th1);
-    Scheduler::put(th2);
-    Scheduler::put(th3);
-    Scheduler::put(th4);
-    Scheduler::put(th5);
+    s.put(th1);
+    s.put(th2);
+    s.put(th3);
+    s.put(th4);
+    s.put(th5);
 
-    __putc((char)Scheduler::get()->i); __putc('\n');
-    __putc((char)Scheduler::get()->i); __putc('\n');
-    __putc((char)Scheduler::get()->i); __putc('\n');
-    __putc((char)Scheduler::get()->i); __putc('\n');
-    __putc((char)Scheduler::get()->i); __putc('\n');
+    __putc((char)(s.get()->i + '0')); __putc('\n');
+    __putc((char)(s.get()->i + '0')); __putc('\n');
+    __putc((char)(s.get()->i + '0')); __putc('\n');
+    __putc((char)(s.get()->i + '0')); __putc('\n');
+    __putc((char)(s.get()->i + '0')); __putc('\n');
 
-
-    int* ptr = (int*)mem_alloc(10*sizeof(int));
-    for(int i=0; i<10; i++) ptr[i] = 0;
-    mem_free(ptr);
 
     delete th1;
     delete th2;

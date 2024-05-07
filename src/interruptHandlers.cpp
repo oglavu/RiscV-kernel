@@ -12,11 +12,6 @@ namespace interruptHandlers {
         // not ecall interruption
         if (scause != (uint64) (1 << 3) && scause != (uint64) (1 << 3 | 0x01)) {
             // unexpreted trap cause
-
-            /*printString("ERROR! SCAUSE:");
-            printInt(scause);
-            printString("\n");
-             */
             return;
         }
 
@@ -33,14 +28,14 @@ namespace interruptHandlers {
                 __asm__ volatile ("mv %0, a1" : "=r" (size));
                 retVal = (uint64) MemoryAllocator::mem_alloc(size);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
-                __asm__ volatile ("sd t0, 80(sp)");
+                __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::MEM_FREE:
                 void *ptr;
                 __asm__ volatile ("mv %0, a1" : "=r"(ptr));
                 retVal = MemoryAllocator::mem_free(ptr);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
-                __asm__ volatile ("sd t0, 80(sp)");
+                __asm__ volatile ("sd t0, 80(fp)");
                 break;
             default:
                 break;
@@ -57,11 +52,6 @@ namespace interruptHandlers {
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
-        /*uint64 volatile sepc = r_sepc();
-        uint64 volatile sstatus = r_sstatus();
-        TCB::dispatch();
-        w_sstatus(sstatus);
-        w_sepc(sepc);*/
     }
 
 }

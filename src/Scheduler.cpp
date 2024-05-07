@@ -4,8 +4,6 @@
 
 #include "../h/Scheduler.h"
 
-Queue<TCB>* Scheduler::readyQueue = new Queue<TCB>();
-
 
 TCB *Scheduler::get() {
     return readyQueue->pop();

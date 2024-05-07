@@ -11,11 +11,11 @@ class TCB;
 
 class Scheduler {
 public:
-    static TCB* get();
-    static void put(TCB*);
+    TCB* get();
+    void put(TCB*);
 
 private:
-    static Queue<TCB>* readyQueue;
+    Queue<TCB>* readyQueue = new Queue<TCB>();
 
 };
 
