@@ -16,13 +16,12 @@ private:
     static int max(const AVLTree* n1, const AVLTree* n2);
     static bool isRightSon(const AVLTree* node);
     static AVLTree* findSuccessor(AVLTree* node);
-    static AVLTree* findPredecessor(AVLTree* node);
     static AVLTree* rightRotation(AVLTree* node);
     static AVLTree* leftRotation(AVLTree* node);
     static AVLTree* balance(AVLTree* cur);
 
 public:
-    AVLTree* left, *right, *parent, *sameSize;
+    AVLTree* left, *right, *parent, *sameSizeNext, *sameSizePrev;
     AVLTree* next, *prev;
     size_t sz; int height;
     bool isFree;
@@ -35,7 +34,7 @@ public:
     }
 
     void resetAll(RESET_FLAGS flags = NO_FLAG) {
-        left = right = parent = next = prev = sameSize = nullptr; height = 0;
+        left = right = parent = next = prev = sameSizeNext = sameSizePrev = nullptr; height = 0;
         if((int)flags & ~(int)SAVE_SZ) sz = 0;
     }
     static AVLTree* findFreeSeg(AVLTree*, size_t) ;

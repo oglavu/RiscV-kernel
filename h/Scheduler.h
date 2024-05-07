@@ -11,11 +11,19 @@ class TCB;
 
 class Scheduler {
 public:
-    TCB* get();
-    void put(TCB*);
+    static TCB* get();
+    static void put(TCB*);
 
+    Scheduler() = delete;
+    Scheduler(const Scheduler&) = delete;
+    Scheduler& operator =(Scheduler&) = delete;
+    ~Scheduler() {
+        delete readyQueue;
+    }
 private:
-    Queue<TCB>* readyQueue = new Queue<TCB>();
+    static void init();
+    static bool initialised;
+    static Queue<TCB>* readyQueue;
 
 };
 

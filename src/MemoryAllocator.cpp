@@ -13,7 +13,7 @@ const uint64 MemoryAllocator::HEADER_SIZE = (uint64)
 bool MemoryAllocator::initialised = false;
 
 
-void MemoryAllocator::initMem() {
+void MemoryAllocator::init() {
     if (MemoryAllocator::initialised) return;
 
     MemoryAllocator::startAddr = (((uint64)HEAP_START_ADDR + MEM_BLOCK_SIZE - 1)/MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE;
@@ -31,7 +31,7 @@ void MemoryAllocator::initMem() {
 void* MemoryAllocator::mem_alloc(size_t size) {
     if (size <= 0) return nullptr;
     if (!MemoryAllocator::initialised)
-        MemoryAllocator::initMem();
+        MemoryAllocator::init();
 
     size = ((size + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE;
 
@@ -59,7 +59,7 @@ void* MemoryAllocator::mem_alloc(size_t size) {
 int MemoryAllocator::mem_free(void *ptr) {
 
     if (!ptr) return -1;
-    if ((uint64)ptr % MEM_BLOCK_SIZE != 0 ) return -2; // ptr doesnt point to beginning of block (its faulty)
+    if ((uint64)ptr % MEM_BLOCK_SIZE != 0 ) return -2; // ptr doesn't point to beginning of block (its faulty)
     if ((uint64)ptr >= MemoryAllocator::endAddr || (uint64) ptr < MemoryAllocator::startAddr) return -3; //ptr out of bound
 
     AVLTree* cur = (AVLTree*) ((uint64)ptr - HEADER_SIZE); cur->resetAll(AVLTree::SAVE_SZ); cur->isFree = true;
@@ -78,6 +78,7 @@ int MemoryAllocator::mem_free(void *ptr) {
 
     if (prev && (uint64)prev + prev->sz + HEADER_SIZE == (uint64)cur) {
         MemoryAllocator::free = AVLTree::remove(MemoryAllocator::free, prev);
+        prev->resetAll(AVLTree::SAVE_SZ);
         prev->sz += cur->sz + HEADER_SIZE;
         prev->isFree = true;
 

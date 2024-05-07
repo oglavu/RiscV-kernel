@@ -6,6 +6,7 @@
 #include "../h/syscall_c.h"
 #include "../h/syscall_cpp.h"
 #include "../h/Scheduler.h"
+#include "../h/AVLTree.h"
 
 class TCB {
 public:
@@ -17,35 +18,24 @@ public:
 
 
 int main() {
+    __putc(((char)sizeof(AVLTree) + (char)0));
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable | 0x01);
 
-    Scheduler s;
+
 
     TCB* th1 = new TCB(55);
     TCB* th2 = new TCB(2);
-    TCB* th3 = new TCB(3);
-    TCB* th4 = new TCB(4);
-    TCB* th5 = new TCB(5);
 
-    s.put(th1);
-    s.put(th2);
-    s.put(th3);
-    s.put(th4);
-    s.put(th5);
+    Scheduler::put(th1);
+    Scheduler::put(th2);
 
-    __putc((char)(s.get()->i + '0')); __putc('\n');
-    __putc((char)(s.get()->i + '0')); __putc('\n');
-    __putc((char)(s.get()->i + '0')); __putc('\n');
-    __putc((char)(s.get()->i + '0')); __putc('\n');
-    __putc((char)(s.get()->i + '0')); __putc('\n');
+    __putc((char)(Scheduler::get()->i + '0')); __putc('\n');
+    __putc((char)(Scheduler::get()->i + '0')); __putc('\n');
 
 
     delete th1;
     delete th2;
-    delete th3;
-    delete th4;
-    delete th5;
 
     return 0;
 }

@@ -16,7 +16,7 @@ private:
 
     static bool initialised;
 
-    static void initMem();
+    static void init();
 public:
     static uint64 startAddr;
     static uint64 endAddr;

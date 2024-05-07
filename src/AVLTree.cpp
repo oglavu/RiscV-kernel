@@ -27,7 +27,10 @@ AVLTree* AVLTree::insert(AVLTree *root, AVLTree *node) {
     AVLTree* cur = root, *prev = nullptr;
     while(cur) {
         if (node->sz == cur->sz) {
-            cur->sameSize = node;
+            if (cur->sameSizeNext) cur->sameSizeNext->sameSizePrev = node;
+            node->sameSizeNext = cur->sameSizeNext;
+            cur->sameSizeNext = node;
+            node->sameSizePrev = cur;
             return root;
         }
         prev = cur;
@@ -118,11 +121,24 @@ AVLTree* AVLTree::remove(AVLTree* root, AVLTree* node) {
     if (!root) return nullptr;
     if (!node || !contains(root, node)) return root;
 
-    if (node->sameSize) {
-        (isRightSon(node) ? node->parent->right : node->parent->left) = node->sameSize;
-        node->sameSize->right = node->right;
-        node->sameSize->left = node->left;
-        node->sameSize->parent = node->parent;
+    if (node->sameSizeNext) {
+        AVLTree* p = node->parent, *l = node->left,
+                *r = node->right, *sn = node->sameSizeNext, *sp = node->sameSizePrev;
+        // updating towards s
+        if (sp) sp->sameSizeNext = sn;
+        if (p) (isRightSon(node) ? p->right : p->left) = sn;
+        if (r) r->parent = sn;
+        if (l) l->parent = sn;
+        // updating from s
+        sn->sameSizePrev = sp;
+        sn->right = r;
+        sn->left = l;
+        sn->parent = p;
+        return (p) ? root : sn;
+    }
+
+    if (node->sameSizePrev) {
+        node->sameSizePrev->sameSizeNext = nullptr;
         return root;
     }
 
@@ -172,7 +188,10 @@ bool AVLTree::contains(const AVLTree* root, const AVLTree* node) {
     while(cur) {
         if (cur == node)
             return true;
-        if (cur->sz < node->sz)
+
+        if (cur->sz == node->sz)
+            cur = cur->sameSizeNext;
+        else if (cur->sz < node->sz)
             cur = cur->right;
         else
             cur = cur->left;
@@ -250,14 +269,6 @@ AVLTree *AVLTree::removeLL(AVLTree *toRem, AVLTree *root) {
         nextNode->prev = prevNode;
 
     return root;
-}
-
-AVLTree *AVLTree::findPredecessor(AVLTree *node) {
-    if (!node || !node->left) return nullptr;
-    node = node->left;
-    while(node->right)
-        node = node->right;
-    return node;
 }
 
 AVLTree *AVLTree::insertLL(AVLTree *toInsert, AVLTree *root) {

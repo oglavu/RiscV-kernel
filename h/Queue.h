@@ -33,11 +33,11 @@ public:
     Queue(const Queue<T>&) = delete;
     Queue<T>& operator=(Queue<T>&) = delete;
 
-    T* peekFirst() { return (head) ? head->data : nullptr; }
-    T* peekLast() { return (last) ? last->data : nullptr; }
+    T* peekFirst() const { return (head) ? head->data : nullptr; }
+    T* peekLast() const { return (last) ? last->data : nullptr; }
 
-    void push(T* data);
-    T* pop();
+    static void push(Queue<T>* self, T* data);
+    static T* pop(Queue<T>* self);
 
     ~Queue();
 
@@ -45,38 +45,46 @@ public:
 
 template<typename T>
 Queue<T>::~Queue() {
-    if (!head) return;
-    while(head->next)
-        pop();
-    void* p = (void*) (((uint64) head / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
+    if (!this->head) return;
+    Node* cur = head;
+    while(cur->next) {
+        Node* old = cur;
+        cur = cur->next;
+        delete old;
+    }
+    void* p = (void*) (((uint64) cur / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
     mem_free(p);
 }
 
 template<typename T>
-T *Queue<T>::pop() {
-    if(!head) return nullptr;
-    Node* node = head;
-    T* data = node->data;
+T *Queue<T>::pop(Queue<T>* self) {
+    if(!self->head) return nullptr;
+    Node* toPop = self->head;
+    T* data = toPop->data;
 
-    head = head->next;
-    if (node == last)
-        last = nullptr;
-    delete node;
+    self->head = self->head->next;
+    if (toPop == self->last) {
+        self->last = nullptr;
+        void* p = (void*) (((uint64) toPop / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
+        mem_free(p);
+        self->lastNodeAddr = 0;
+    } else
+        delete toPop;
     return data;
 }
 
 template<typename T>
-void Queue<T>::push(T *data) {
-    Node* node = new(this) Node();
+void Queue<T>::push(Queue<T>*self ,T *data) {
+    Node* node = new(self) Node();
     node->data = data;
 
-    if (!head) {
-        head = last = node;
+    if (!self->head) {
+        self->head = self->last = node;
         return;
     }
 
-    last->next = node;
-    last = node;
+    self->last->next = node;
+    self->last = node;
 
 }
 
