@@ -5,22 +5,22 @@
 #include "../h/Scheduler.h"
 
 bool Scheduler::initialised = false;
-Queue<TCB>* Scheduler::readyQueue = nullptr;
+Queue<PCB>* Scheduler::readyQueue = nullptr;
 
-TCB *Scheduler::get() {
+PCB *Scheduler::get() {
     return (Scheduler::initialised) ?
-        Queue<TCB>::pop(Scheduler::readyQueue) : nullptr;
+        Queue<PCB>::pop(Scheduler::readyQueue) : nullptr;
 }
 
-void Scheduler::put(TCB * data) {
+void Scheduler::put(PCB * data) {
     if (!Scheduler::initialised)
         Scheduler::init();
-    Queue<TCB>::push(Scheduler::readyQueue, data);
+    Queue<PCB>::push(Scheduler::readyQueue, data);
 }
 
 void Scheduler::init() {
     if (Scheduler::initialised) return;
     Scheduler::readyQueue =
-            (Queue<TCB>*)mem_alloc(sizeof(Queue<TCB>));
+            (Queue<PCB>*)mem_alloc(sizeof(Queue<PCB>));
     Scheduler::initialised = true;
 }

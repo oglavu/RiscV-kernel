@@ -7,12 +7,12 @@
 
 #include "Queue.h"
 
-class TCB;
+class PCB;
 
 class Scheduler {
 public:
-    static TCB* get();
-    static void put(TCB*);
+    static PCB* get();
+    static void put(PCB*);
 
     Scheduler() = delete;
     Scheduler(const Scheduler&) = delete;
@@ -23,7 +23,7 @@ public:
 private:
     static void init();
     static bool initialised;
-    static Queue<TCB>* readyQueue;
+    static Queue<PCB>* readyQueue;
 
 };
 

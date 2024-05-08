@@ -10,7 +10,7 @@
 class RiscV {
 public:
     static void popSppSpie();
-    static void setStvecTable(){}
+    static void setStvecTable();
 
     enum CodeOps{
         MEM_ALOC = 0x01,
