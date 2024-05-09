@@ -6,13 +6,15 @@
 #define PROJEKAT_SCHEDULER_H
 
 #include "Queue.h"
+#include "syscall_cpp.h"
 
-class PCB;
+class _thread;
 
 class Scheduler {
 public:
-    static PCB* get();
-    static void put(PCB*);
+    static _thread* get();
+    static void put(_thread*);
+    static Queue<_thread>* readyQueue;
 
     Scheduler() = delete;
     Scheduler(const Scheduler&) = delete;
@@ -23,7 +25,7 @@ public:
 private:
     static void init();
     static bool initialised;
-    static Queue<PCB>* readyQueue;
+
 
 };
 

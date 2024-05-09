@@ -5,37 +5,96 @@
 #include "../lib/console.h"
 #include "../h/syscall_c.h"
 #include "../h/syscall_cpp.h"
-#include "../h/Scheduler.h"
-#include "../h/AVLTree.h"
+#include "../h/_thread.h"
 
-class TCB {
-public:
-    uint64 i;
-    uint64 s = 0;
-    uint64 a = 0;
-    explicit TCB(int k) : i(k) {}
-};
+const int N = 10;
+
+
+void Afunc(void* p) {
+    for(int i=0; i < N; i++) {
+        __putc('A');
+        __putc((char)('0' + i));
+        __putc('\n');
+        _thread::yield();
+    }
+
+}
+
+void Bfunc(void* p) {
+    for(int i=0; i < N; i++) {
+        __putc('B');
+        __putc((char)('0' + i));
+        __putc('\n');
+        _thread::yield();
+    }
+}
+
+void Cfunc(void* p) {
+    for(int i=0; i < N; i++) {
+        __putc('C');
+        __putc((char)('0' + i));
+        __putc('\n');
+        _thread::yield();
+    }
+}
+
+void printMem(AVLTree* root) {
+    /*
+     * Function that visualises memory occupation
+     * by printing N blocks in ROW rows
+     * '.' block is free
+     * '|' block is taken
+     * param: MemoryAllocator::first
+    */
+    const uint64 N = 256;
+    const uint64 ROW = 4;
+    AVLTree* cur = root;
+    for (uint64 i=0; i<N ;i++) {
+        uint64 addr = i*MEM_BLOCK_SIZE + MemoryAllocator::startAddr;
+        uint64 freeStart = (uint64)cur;
+        uint64 blockSize = cur->sz + MemoryAllocator::HEADER_SIZE;
+
+        if (cur && addr == freeStart + blockSize) {
+            cur = cur->next;
+            freeStart = (uint64)cur;
+        }
+
+        if (cur && addr < freeStart) {
+            __putc('|');
+        } else {
+            __putc('.');
+        }
+        if ((i+1) % (N/ROW) == 0) __putc('\n');
+    }
+    __putc('\n');
+}
+
 
 
 int main() {
-    __putc(((char)sizeof(AVLTree) + (char)0));
+
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable | 0x01);
 
+    _thread* th1 = new _thread(&Afunc, nullptr);
+    _thread* th2 = new _thread(&Bfunc, nullptr);
+    _thread* th3 = new _thread(&Cfunc, nullptr);
+    th1->start();
+    th2->start();
+    th1->join();
+    delete th1;
+
+    th3->start();
 
 
-    TCB* th1 = new TCB(55);
-    TCB* th2 = new TCB(2);
 
-    Scheduler::put(th1);
-    Scheduler::put(th2);
+    th1->join();
 
-    __putc((char)(Scheduler::get()->i + '0')); __putc('\n');
-    __putc((char)(Scheduler::get()->i + '0')); __putc('\n');
-
+    th3->join();
 
     delete th1;
     delete th2;
+    delete th3;
 
     return 0;
 }

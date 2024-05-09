@@ -5,22 +5,23 @@
 #include "../h/Scheduler.h"
 
 bool Scheduler::initialised = false;
-Queue<PCB>* Scheduler::readyQueue = nullptr;
+Queue<_thread>* Scheduler::readyQueue = nullptr;
 
-PCB *Scheduler::get() {
+_thread *Scheduler::get() {
     return (Scheduler::initialised) ?
-        Queue<PCB>::pop(Scheduler::readyQueue) : nullptr;
+        Queue<_thread>::pop(Scheduler::readyQueue) : nullptr;
 }
 
-void Scheduler::put(PCB * data) {
+void Scheduler::put(_thread * data) {
     if (!Scheduler::initialised)
         Scheduler::init();
-    Queue<PCB>::push(Scheduler::readyQueue, data);
+    Queue<_thread>::push(Scheduler::readyQueue, data);
 }
 
 void Scheduler::init() {
     if (Scheduler::initialised) return;
-    Scheduler::readyQueue =
-            (Queue<PCB>*)mem_alloc(sizeof(Queue<PCB>));
+    // has to include "syscall_cpp.h" so it can initialise Queue attributes
+    // C API doesn't init them
+    Scheduler::readyQueue = new Queue<_thread>();
     Scheduler::initialised = true;
 }
