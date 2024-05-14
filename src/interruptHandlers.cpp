@@ -7,12 +7,39 @@
 
 namespace interruptHandlers {
 
+    void handleConsoleInterrupt() {
+        console_handler();
+        RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
+    }
+
+    void handleTimerInterrupt() {
+        RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
+    }
+
     void handleSupervisorTrap() {
         uint64 scause = RiscV::scauseR();
-        // not ecall interruption
-        if (scause != (uint64) (1 << 3) && scause != (uint64) (1 << 3 | 0x01)) {
-            // unexpreted trap cause
-            return;
+        // causes
+        enum causes: uint64 {
+            timer = (uint64) 1 << 63 | 0x1,
+            hardware = (uint64) 1 << 63 | 0x9,
+            userCall = (uint64) 0x8,
+            sysCall = (uint64) 0x9
+        };
+
+        switch(scause) {
+            case causes::timer:
+                handleTimerInterrupt();
+                return;
+            case causes::hardware:
+                handleConsoleInterrupt();
+                return;
+            case causes::userCall:
+            case causes::sysCall:
+                // further processing below
+                break;
+            default:
+                // error
+                break;
         }
 
         // interrupt from UserMode(0x08) or KernelMode(0x09)
@@ -46,13 +73,6 @@ namespace interruptHandlers {
 
     }
 
-    void handleConsoleInterrupt() {
-        console_handler();
-    }
-
-    void handleTimerInterrupt() {
-        RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
-    }
 
 }
 

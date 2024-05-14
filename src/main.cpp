@@ -46,8 +46,8 @@ void printMem(AVLTree* root) {
      * '|' block is taken
      * param: MemoryAllocator::first
     */
-    const uint64 N = 256;
-    const uint64 ROW = 4;
+    const uint64 N = 1024;
+    const uint64 ROW = 16;
     AVLTree* cur = root;
     for (uint64 i=0; i<N ;i++) {
         uint64 addr = i*MEM_BLOCK_SIZE + MemoryAllocator::startAddr;
@@ -57,6 +57,7 @@ void printMem(AVLTree* root) {
         if (cur && addr == freeStart + blockSize) {
             cur = cur->next;
             freeStart = (uint64)cur;
+            blockSize = cur->sz + MemoryAllocator::HEADER_SIZE;
         }
 
         if (cur && addr < freeStart) {
@@ -67,6 +68,7 @@ void printMem(AVLTree* root) {
         if ((i+1) % (N/ROW) == 0) __putc('\n');
     }
     __putc('\n');
+    __putc('\n');
 }
 
 
@@ -74,27 +76,26 @@ void printMem(AVLTree* root) {
 int main() {
 
 
-    RiscV::stvecW((uint64)&RiscV::setStvecTable | 0x01);
+    RiscV::stvecW((uint64)&RiscV::setStvecTable);
 
     _thread* th1 = new _thread(&Afunc, nullptr);
     _thread* th2 = new _thread(&Bfunc, nullptr);
     _thread* th3 = new _thread(&Cfunc, nullptr);
     th1->start();
     th2->start();
-    th1->join();
-    delete th1;
-
     th3->start();
 
-
-
     th1->join();
-
+    th2->join();
     th3->join();
 
     delete th1;
     delete th2;
     delete th3;
 
+
+
+    //Queue<_thread>::push(Scheduler::readyQueue, new _thread(nullptr, nullptr));
+    printMem(MemoryAllocator::first);
     return 0;
 }

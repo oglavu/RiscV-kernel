@@ -19,51 +19,15 @@ sd x\index, \index*8(sp)
 
 
 .extern _ZN17interruptHandlers20handleSupervisorTrapEv
-.extern _ZN17interruptHandlers20handleTimerInterruptEv
-.extern _ZN17interruptHandlers22handleConsoleInterruptEv
 
-.global _ZN5RiscV13setStvecTableEv
 .align 4
+.global _ZN5RiscV13setStvecTableEv
 .type _ZN5RiscV13setStvecTableEv, @function
+# RiscV::setStvecTable()
 _ZN5RiscV13setStvecTableEv:
-    j softwareInterrupt #offs 0*4
-    j timerInterrupt    #offs 1*4
-    .skip 28
-    j consoleInterrupt  #offs 9*4
-    sret
-
-
-softwareInterrupt:
     PUSH_REGS
     call _ZN17interruptHandlers20handleSupervisorTrapEv
     POP_REGS
     sret
-
-
-timerInterrupt:
-    PUSH_REGS
-    call _ZN17interruptHandlers20handleTimerInterruptEv
-    POP_REGS
-    sret
-
-
-consoleInterrupt:
-    PUSH_REGS
-    call _ZN17interruptHandlers22handleConsoleInterruptEv
-    POP_REGS
-    sret
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
