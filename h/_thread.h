@@ -6,13 +6,13 @@
 #define PROJEKAT__THREAD_H
 
 #include "Scheduler.h"
-#include "MemoryAllocator.h"
 #include "syscall_cpp.h"
 
 class _thread {
 private:
-    using Runnable = void (*) (void*);
-    enum ThreadState {Init, Ready, Running, Suspended, Blocked, Terminated};
+    using ThreadBody = void (*) (void*);
+    using thread_p = _thread*;
+    enum ThreadState {Init, Ready, Running, Suspended, Terminated};
 
     struct Context {
         uint64 sp, ra;
@@ -20,30 +20,31 @@ private:
 
     _thread* parentThread;
     Context context;
-    _thread::Runnable threadBody;
+    _thread::ThreadBody body;
     ThreadState state = Init;
-    bool isParentWaiting = false;
     void* bodyArguement;
     uint64 stackStartAddr;
-    static _thread* mainThread;
 
 
+    explicit _thread(_thread::ThreadBody bodyy, void* arg, uint8* stackStartAddrParam); // uint64 !!!!!!!!!!
     static void contextSwitch(_thread::Context* oldCont, _thread::Context* newCont);
     static void wrap();
     static void init();
+    static void dispatch();
     static void complete();
+
 
 public:
     static _thread* runningThread;
+    static _thread* mainThread;
 
-    explicit _thread(_thread::Runnable body, void* arg);
-    static void dispatch();
+    bool isTerminated() const { return this->state == ThreadState::Terminated; }
+    static int createThread(thread_p* handle, ThreadBody bodyy, void* arg, uint8* allocStackParam); // uint64 !!!!!!!!!!
+    static int exitThread();
     static void yield();
-    int join();
     void start();
 
     ~_thread() {
-        MemoryAllocator::mem_free((void*)stackStartAddr);
         this->state = ThreadState::Terminated;
     }
 };

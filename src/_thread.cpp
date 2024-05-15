@@ -7,15 +7,15 @@
 _thread* _thread::runningThread = nullptr;
 _thread* _thread::mainThread = nullptr;
 
-_thread::_thread(_thread::Runnable body, void *arg):
-                    threadBody(body), bodyArguement(arg) {
+_thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    body(bodyy), bodyArguement(arg) {
     if (!_thread::mainThread)
         _thread::init();
     // stack grows downwards, so first location is top of allocated space
-    stackStartAddr = (body) ? (uint64)MemoryAllocator::mem_alloc(DEFAULT_STACK_SIZE) : 0;
+    stackStartAddr = (uint64)allocStack;
     parentThread = _thread::runningThread;
     // Not subtracting one bcs stack should point to last TAKEN address
-    context.sp = stackStartAddr + DEFAULT_STACK_SIZE;
+    context.sp = stackStartAddr + sizeof(uint8)*DEFAULT_STACK_SIZE; // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     context.ra = (uint64) &_thread::wrap;
     state = ThreadState::Ready;
 }
@@ -25,17 +25,12 @@ void _thread::dispatch() {
     if (oldR->state == ThreadState::Running) {
         oldR->state = ThreadState::Ready;
         Scheduler::put(oldR);
-
-    } else if (oldR->parentThread && oldR->parentThread->isParentWaiting &&
-            oldR->state == ThreadState::Terminated) {
-        oldR->parentThread->state = ThreadState::Ready;
-        Scheduler::put(oldR->parentThread);
     }
 
     _thread *newR = Scheduler::get();
-    _thread::runningThread = newR;
-    _thread::runningThread->state = ThreadState::Running;
     if (newR && oldR != newR) {
+        _thread::runningThread = newR;
+        _thread::runningThread->state = ThreadState::Running;
         _thread::contextSwitch(&oldR->context, &newR->context);
     }
 }
@@ -46,27 +41,17 @@ void _thread::start() {
 }
 
 void _thread::wrap() {
-    runningThread->threadBody(runningThread->bodyArguement);
+    runningThread->body(runningThread->bodyArguement);
     _thread::complete();
 }
 
 void _thread::init() {
     if (mainThread) return;
     _thread::mainThread = (_thread*)1; // blocking infinite loop
-    _thread::mainThread = new _thread(nullptr, nullptr);
+    _thread::mainThread = new _thread(nullptr, nullptr, nullptr);
     // context will anyway be changed after first dispatch
     _thread::runningThread =_thread::mainThread;
     _thread::runningThread->state = ThreadState::Running;
-}
-
-int _thread::join() {
-    if (this->parentThread != runningThread) return -1;
-    if (this->state == ThreadState::Terminated) return 0;
-    _thread::runningThread->isParentWaiting = true;
-    _thread::runningThread->state = ThreadState::Suspended;
-    _thread::yield();
-    _thread::runningThread->state = ThreadState::Running;
-    return 0;
 }
 
 void _thread::complete() {
@@ -74,3 +59,16 @@ void _thread::complete() {
     _thread::dispatch();
 }
 
+// stack is allocated in ABI
+int _thread::createThread(_thread::thread_p *handle, _thread::ThreadBody bodyy, void *arg, uint8* allocStackParam) { // uint64 !!!!!!!!
+    _thread* t = new _thread(bodyy, arg, allocStackParam);
+    if (!t || !allocStackParam) return -1;
+    *handle = t;
+    return 0;
+}
+
+int _thread::exitThread() {
+    if (_thread::runningThread->state != ThreadState::Running) return -1;
+    _thread::runningThread->complete();
+    return 0;
+}

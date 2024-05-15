@@ -4,6 +4,7 @@
 
 #include "../lib/console.h"
 #include "../h/syscall_c.h"
+#include "../h/MemoryAllocator.h"
 #include "../h/syscall_cpp.h"
 #include "../h/_thread.h"
 
@@ -39,63 +40,61 @@ void Cfunc(void* p) {
 }
 
 void printMem(AVLTree* root) {
-    /*
-     * Function that visualises memory occupation
-     * by printing N blocks in ROW rows
-     * '.' block is free
-     * '|' block is taken
-     * param: MemoryAllocator::first
-    */
-    const uint64 N = 1024;
-    const uint64 ROW = 16;
     AVLTree* cur = root;
-    for (uint64 i=0; i<N ;i++) {
+    static const uint64 N = 256;
+    static const uint64 R = 4;
+    for (uint64 i=0; i<N; i++) {
         uint64 addr = i*MEM_BLOCK_SIZE + MemoryAllocator::startAddr;
         uint64 freeStart = (uint64)cur;
-        uint64 blockSize = cur->sz + MemoryAllocator::HEADER_SIZE;
+        uint64 freeSize = cur->sz + MemoryAllocator::HEADER_SIZE;
 
-        if (cur && addr == freeStart + blockSize) {
+        if (cur && addr == freeStart + freeSize) {
             cur = cur->next;
             freeStart = (uint64)cur;
-            blockSize = cur->sz + MemoryAllocator::HEADER_SIZE;
         }
 
-        if (cur && addr < freeStart) {
+        if (cur && addr < freeStart)
             __putc('|');
-        } else {
+        else
             __putc('.');
-        }
-        if ((i+1) % (N/ROW) == 0) __putc('\n');
+
+        if ((i+1) % (N/R) == 0) __putc('\n');
+
     }
-    __putc('\n');
     __putc('\n');
 }
 
 
-
 int main() {
-
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
 
-    _thread* th1 = new _thread(&Afunc, nullptr);
-    _thread* th2 = new _thread(&Bfunc, nullptr);
-    _thread* th3 = new _thread(&Cfunc, nullptr);
+    uint8* st1 = new uint8 [DEFAULT_STACK_SIZE];
+    uint8* st2 = new uint8 [DEFAULT_STACK_SIZE];
+    uint8* st3 = new uint8 [DEFAULT_STACK_SIZE];
+
+    _thread* th1, *th2, *th3;
+    _thread::createThread(&th1, &Afunc, nullptr, st1);
+    _thread::createThread(&th2, &Bfunc, nullptr, st2);
+    _thread::createThread(&th3, &Cfunc, nullptr, st3);
+
     th1->start();
     th2->start();
     th3->start();
 
-    th1->join();
-    th2->join();
-    th3->join();
+    while (!th1->isTerminated() ||
+            !th2->isTerminated() ||
+            !th3->isTerminated()) {
+        _thread::yield();
+    }
+
+    delete[] st1;
+    delete[] st2;
+    delete[] st3;
 
     delete th1;
     delete th2;
     delete th3;
 
-
-
-    //Queue<_thread>::push(Scheduler::readyQueue, new _thread(nullptr, nullptr));
-    printMem(MemoryAllocator::first);
     return 0;
 }

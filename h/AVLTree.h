@@ -26,17 +26,9 @@ public:
     size_t sz; int height;
     bool isFree;
 
-    enum RESET_FLAGS {NO_FLAG=0, SAVE_SZ=1};
+    enum RESET_FLAGS {NO_FLAG=0, RS_SZ=1, RS_LL=2, RS_BT=4};
 
-    AVLTree(size_t sz) {
-        resetAll();
-        this->sz = sz;
-    }
-
-    void resetAll(RESET_FLAGS flags = NO_FLAG) {
-        left = right = parent = next = prev = sameSizeNext = sameSizePrev = nullptr; height = 0;
-        if((int)flags & ~(int)SAVE_SZ) sz = 0;
-    }
+    void resetAll(int flags = NO_FLAG);
     static AVLTree* findFreeSeg(AVLTree*, size_t) ;
     static AVLTree* insert(AVLTree* root, AVLTree* node);
     static AVLTree* remove(AVLTree* root, AVLTree* node);

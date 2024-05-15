@@ -291,3 +291,9 @@ AVLTree *AVLTree::insertLL(AVLTree *toInsert, AVLTree *root) {
     return root;
 }
 
+void AVLTree::resetAll(int flags) {
+    if((int)flags & (int)RS_SZ) sz = 0;
+    if((int)flags & (int)RS_LL) next = prev = nullptr;
+    if((int)flags & (int)RS_BT) {left = right = parent = sameSizeNext = sameSizePrev = nullptr; height = 0;}
+}
+
