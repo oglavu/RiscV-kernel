@@ -27,3 +27,30 @@ int mem_free(void* ptr){
     __asm__ volatile ("mv %0, a0" : "=r"(retVal));
     return (int) retVal;
 }
+
+int thread_create(thread_t* handle,
+                  void(*start_routine) (void*),
+                  void* arg ) {
+    uint8* stack = nullptr; // uint64 !!!!!!!!!!!!!!!!!!!!!!
+    if (start_routine) {
+        stack = (uint8*)mem_alloc(sizeof(uint8)*DEFAULT_STACK_SIZE); // uint64 !!!!!!!!!!!!!!!!!!!!!! x2
+        if (!stack) return -1;
+    }
+    RiscV::a4W((uint64)stack);
+    RiscV::a3W((uint64)arg);
+    RiscV::a2W((uint64)start_routine);
+    RiscV::a1W((uint64)handle);
+    RiscV::a0W((uint64)RiscV::CodeOps::THR_CREA);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
+int thread_exit() {
+    RiscV::a0W(RiscV::CodeOps::THR_EXIT);
+    __asm__ volatile ("ecall");
+    return (int) RiscV::a0R();
+}

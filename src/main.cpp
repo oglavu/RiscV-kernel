@@ -69,18 +69,12 @@ int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
 
-    uint8* st1 = new uint8 [DEFAULT_STACK_SIZE];
-    uint8* st2 = new uint8 [DEFAULT_STACK_SIZE];
-    uint8* st3 = new uint8 [DEFAULT_STACK_SIZE];
-
     _thread* th1, *th2, *th3;
-    _thread::createThread(&th1, &Afunc, nullptr, st1);
-    _thread::createThread(&th2, &Bfunc, nullptr, st2);
-    _thread::createThread(&th3, &Cfunc, nullptr, st3);
+    if (thread_create(&th1, &Afunc, nullptr) < 0) __putc('a');
+    if (thread_create(&th2, &Bfunc, nullptr) < 0)__putc('b');
+    if (thread_create(&th3, &Cfunc, nullptr) < 0) __putc('c');
 
-    th1->start();
-    th2->start();
-    th3->start();
+    printMem(MemoryAllocator::first);
 
     while (!th1->isTerminated() ||
             !th2->isTerminated() ||
@@ -88,13 +82,10 @@ int main() {
         _thread::yield();
     }
 
-    delete[] st1;
-    delete[] st2;
-    delete[] st3;
-
-    delete th1;
-    delete th2;
     delete th3;
+    delete th2;
+    delete th1;
 
+    printMem(MemoryAllocator::first);
     return 0;
 }

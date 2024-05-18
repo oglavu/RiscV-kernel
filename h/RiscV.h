@@ -12,18 +12,21 @@ public:
     static void popSppSpie();
     static void setStvecTable();
 
-    enum CodeOps{
+    enum CodeOps: uint64{
         MEM_ALOC = 0x01,
-        MEM_FREE = 0x02
+        MEM_FREE = 0x02,
+        THR_CREA = 0x11,
+        THR_EXIT = 0x12,
+        THR_YIEL = 0x13,
     };
 
-    enum BitMaskSStatus {
+    enum BitMaskSStatus: uint64 {
         SSTATUS_SIE = 1 << 1,
         SSTATUS_SPIE = 1 << 5,
         SSTATUS_SPP = 1 << 8
     };
 
-    enum BitMaskSip {
+    enum BitMaskSip: uint64 {
         SIP_SSIP = 1 << 1,
         SIP_SEIP = 1 << 9
     };
@@ -40,13 +43,6 @@ public:
     static uint64 stvalR();
     static void stvalW(uint64 stval);
 
-    static uint64 a0R();
-    static void a0W(uint64 val);
-    static uint64 a1R();
-    static void a1W(uint64 val);
-
-
-
     static uint64 sstatusR();
     static void sstatusW(uint64 sstatus);
 
@@ -59,6 +55,18 @@ public:
 
     static void ms_sip(BitMaskSip mask);
     static void mc_sip(BitMaskSip mask);
+
+    // param regs
+    static uint64 a0R();
+    static void a0W(uint64 val);
+    static uint64 a1R();
+    static void a1W(uint64 val);
+    static uint64 a2R();
+    static void a2W(uint64 val);
+    static uint64 a3R();
+    static void a3W(uint64 val);
+    static uint64 a4R();
+    static void a4W(uint64 val);
 };
 
 inline uint64 RiscV::scauseR() {
@@ -155,6 +163,36 @@ inline void RiscV::ms_sip(RiscV::BitMaskSip mask) {
 
 inline void RiscV::mc_sip(RiscV::BitMaskSip mask) {
     __asm__ volatile ("csrc sip, %[mask]" : : [mask] "r"((uint64)mask));
+}
+
+inline uint64 RiscV::a2R() {
+    uint64 volatile a2;
+    __asm__ volatile ("mv %0, a2" : "=r"(a2));
+    return a2;
+}
+
+inline void RiscV::a2W(uint64 val) {
+    __asm__ volatile ("mv a2, %0" : : "r"(val));
+}
+
+inline uint64 RiscV::a3R() {
+    uint64 volatile a3;
+    __asm__ volatile ("mv %0, a3" : "=r"(a3));
+    return a3;
+}
+
+inline void RiscV::a3W(uint64 val) {
+    __asm__ volatile ("mv a3, %0" : : "r"(val));
+}
+
+inline uint64 RiscV::a4R() {
+    uint64 volatile a4;
+    __asm__ volatile ("mv %0, a4" : "=r"(a4));
+    return a4;
+}
+
+inline void RiscV::a4W(uint64 val) {
+    __asm__ volatile ("mv a4, %0" : : "r"(val));
 }
 
 

@@ -18,6 +18,7 @@ _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UI
     context.sp = stackStartAddr + sizeof(uint8)*DEFAULT_STACK_SIZE; // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     context.ra = (uint64) &_thread::wrap;
     state = ThreadState::Ready;
+    Scheduler::put(this);
 }
 
 void _thread::dispatch() {
@@ -50,7 +51,7 @@ void _thread::init() {
     _thread::mainThread = (_thread*)1; // blocking infinite loop
     _thread::mainThread = new _thread(nullptr, nullptr, nullptr);
     // context will anyway be changed after first dispatch
-    _thread::runningThread =_thread::mainThread;
+    _thread::runningThread = _thread::mainThread;
     _thread::runningThread->state = ThreadState::Running;
 }
 
@@ -60,7 +61,7 @@ void _thread::complete() {
 }
 
 // stack is allocated in ABI
-int _thread::createThread(_thread::thread_p *handle, _thread::ThreadBody bodyy, void *arg, uint8* allocStackParam) { // uint64 !!!!!!!!
+int _thread::createThread(_thread **handle, _thread::ThreadBody bodyy, void *arg, uint8* allocStackParam) { // uint64 !!!!!!!!
     _thread* t = new _thread(bodyy, arg, allocStackParam);
     if (!t || !allocStackParam) return -1;
     *handle = t;

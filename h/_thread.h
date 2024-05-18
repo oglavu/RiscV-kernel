@@ -23,7 +23,6 @@ private:
     _thread::ThreadBody body;
     ThreadState state = Init;
     void* bodyArguement;
-    uint64 stackStartAddr;
 
 
     explicit _thread(_thread::ThreadBody bodyy, void* arg, uint8* stackStartAddrParam); // uint64 !!!!!!!!!!
@@ -32,9 +31,11 @@ private:
     static void init();
     static void dispatch();
     static void complete();
+    void start();
 
 
 public:
+    uint64 stackStartAddr;
     static _thread* runningThread;
     static _thread* mainThread;
 
@@ -42,9 +43,10 @@ public:
     static int createThread(thread_p* handle, ThreadBody bodyy, void* arg, uint8* allocStackParam); // uint64 !!!!!!!!!!
     static int exitThread();
     static void yield();
-    void start();
+
 
     ~_thread() {
+        delete (uint8*)stackStartAddr;  // uint64 !!!!!!!!!!
         this->state = ThreadState::Terminated;
     }
 };
