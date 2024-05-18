@@ -51,6 +51,19 @@ int thread_create(thread_t* handle,
 
 int thread_exit() {
     RiscV::a0W(RiscV::CodeOps::THR_EXIT);
+
     __asm__ volatile ("ecall");
-    return (int) RiscV::a0R();
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
 }
+
+void thread_dispatch() {
+    RiscV::a0W(RiscV::CodeOps::THR_YIEL);
+
+    __asm__ volatile ("ecall");
+}
+
+
+

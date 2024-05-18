@@ -8,15 +8,13 @@
 #include "../h/syscall_cpp.h"
 #include "../h/_thread.h"
 
-const int N = 10;
-
+const int N = 1000;
 
 void Afunc(void* p) {
     for(int i=0; i < N; i++) {
         __putc('A');
         __putc((char)('0' + i));
         __putc('\n');
-        _thread::yield();
     }
 
 }
@@ -26,7 +24,6 @@ void Bfunc(void* p) {
         __putc('B');
         __putc((char)('0' + i));
         __putc('\n');
-        _thread::yield();
     }
 }
 
@@ -35,7 +32,6 @@ void Cfunc(void* p) {
         __putc('C');
         __putc((char)('0' + i));
         __putc('\n');
-        _thread::yield();
     }
 }
 
@@ -68,6 +64,8 @@ void printMem(AVLTree* root) {
 int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
+    RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
+
 
     _thread* th1, *th2, *th3;
     if (thread_create(&th1, &Afunc, nullptr) < 0) __putc('a');
@@ -79,7 +77,7 @@ int main() {
     while (!th1->isTerminated() ||
             !th2->isTerminated() ||
             !th3->isTerminated()) {
-        _thread::yield();
+        thread_dispatch();
     }
 
     delete th3;

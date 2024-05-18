@@ -15,18 +15,31 @@ namespace interruptHandlers {
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
+        if (!_thread::runningThread) return;
+
+        uint64 n = ++_thread::curPeriod;
+        if (n >= _thread::runningThread->getPeriods()) {
+            uint64 volatile sepc = RiscV::sepcR();
+            uint64 volatile sstatus = RiscV::sstatusR();
+
+            _thread::curPeriod = 0;
+            _thread::yield();
+
+            RiscV::sepcW(sepc);
+            RiscV::sstatusW(sstatus);
+        }
     }
 
     void handleSupervisorTrap() {
         // get implicit args from aX regs
-        uint64 codeOp = RiscV::a0R();
-        uint64 a1 = RiscV::a1R();
-        uint64 a2 = RiscV::a2R();
-        uint64 a3 = RiscV::a3R();
-        uint64 a4 = RiscV::a4R();
+        uint64 volatile codeOp = RiscV::a0R();
+        uint64 volatile a1 = RiscV::a1R();
+        uint64 volatile a2 = RiscV::a2R();
+        uint64 volatile a3 = RiscV::a3R();
+        uint64 volatile a4 = RiscV::a4R();
 
 
-        uint64 scause = RiscV::scauseR();
+        uint64 volatile scause = RiscV::scauseR();
 
         // causes
         enum causes: uint64 {
@@ -46,7 +59,6 @@ namespace interruptHandlers {
             case causes::userCall:
             case causes::sysCall:
                 // further processing below
-                break;
             default:
                 // error
                 break;
@@ -57,7 +69,7 @@ namespace interruptHandlers {
 
         uint64 volatile sepc = RiscV::sepcR() + 4;
         uint64 volatile sstatus = RiscV::sstatusR();
-        uint64 retVal;
+        uint64 volatile retVal;
 
         switch (codeOp) {
             case (uint64) RiscV::CodeOps::MEM_ALOC:
@@ -83,6 +95,9 @@ namespace interruptHandlers {
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
+            case (uint64) RiscV::CodeOps::THR_YIEL:
+                _thread::curPeriod = 0;
+                _thread::dispatch();
             default:
                 break;
         }

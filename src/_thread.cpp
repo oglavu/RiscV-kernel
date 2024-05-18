@@ -6,6 +6,7 @@
 
 _thread* _thread::runningThread = nullptr;
 _thread* _thread::mainThread = nullptr;
+uint64 _thread::curPeriod = 0;
 
 _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     body(bodyy), bodyArguement(arg) {
@@ -23,6 +24,7 @@ _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UI
 
 void _thread::dispatch() {
     _thread *oldR = _thread::runningThread;
+    if (!oldR) return;
     if (oldR->state == ThreadState::Running) {
         oldR->state = ThreadState::Ready;
         Scheduler::put(oldR);
@@ -36,12 +38,8 @@ void _thread::dispatch() {
     }
 }
 
-void _thread::start() {
-    Scheduler::put(this);
-    _thread::dispatch();
-}
-
 void _thread::wrap() {
+    RiscV::popSppSpie();
     runningThread->body(runningThread->bodyArguement);
     _thread::complete();
 }
@@ -57,7 +55,7 @@ void _thread::init() {
 
 void _thread::complete() {
     _thread::runningThread->state = ThreadState::Terminated;
-    _thread::dispatch();
+    _thread::yield();
 }
 
 // stack is allocated in ABI
@@ -72,4 +70,9 @@ int _thread::exitThread() {
     if (_thread::runningThread->state != ThreadState::Running) return -1;
     _thread::runningThread->complete();
     return 0;
+}
+
+void _thread::yield() {
+    RiscV::a0W(RiscV::CodeOps::THR_YIEL);
+    __asm__ volatile ("ecall");
 }
