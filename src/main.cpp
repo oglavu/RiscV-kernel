@@ -8,31 +8,26 @@
 #include "../h/syscall_cpp.h"
 #include "../h/_thread.h"
 
-const int N = 1000;
+const int N = 20;
+
+int fib(int n, char c) {
+    if (n<2) return 1;
+    int ans = fib(n-1, c) + fib(n-2, c);
+    __putc(c); __putc('\n');
+    return ans;
+}
 
 void Afunc(void* p) {
-    for(int i=0; i < N; i++) {
-        __putc('A');
-        __putc((char)('0' + i));
-        __putc('\n');
-    }
+    fib(N, 'A');
 
 }
 
 void Bfunc(void* p) {
-    for(int i=0; i < N; i++) {
-        __putc('B');
-        __putc((char)('0' + i));
-        __putc('\n');
-    }
+    fib(N, 'B');
 }
 
 void Cfunc(void* p) {
-    for(int i=0; i < N; i++) {
-        __putc('C');
-        __putc((char)('0' + i));
-        __putc('\n');
-    }
+    fib(N, 'C');
 }
 
 void printMem(AVLTree* root) {
@@ -61,28 +56,46 @@ void printMem(AVLTree* root) {
 }
 
 
+class ThreadA: public Thread {
+    void run() override {
+        Afunc(nullptr);
+    }
+};
+class ThreadB: public Thread {
+    void run() override {
+        Bfunc(nullptr);
+    }
+};
+class ThreadC: public Thread {
+public:
+    void run() override {
+        Cfunc(nullptr);
+    }
+};
+
+
 int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
 
-    _thread* th1, *th2, *th3;
-    if (thread_create(&th1, &Afunc, nullptr) < 0) __putc('a');
-    if (thread_create(&th2, &Bfunc, nullptr) < 0)__putc('b');
-    if (thread_create(&th3, &Cfunc, nullptr) < 0) __putc('c');
+    Thread* t1 = new ThreadA();
+    Thread* t2 = new ThreadB();
+    Thread* t3 = new ThreadC();
 
-    printMem(MemoryAllocator::first);
+    t1->start();
+    t2->start();
+    t3->start();
 
-    while (!th1->isTerminated() ||
-            !th2->isTerminated() ||
-            !th3->isTerminated()) {
-        thread_dispatch();
+    while(1) {
+        Thread::dispatch();
     }
 
-    delete th3;
-    delete th2;
-    delete th1;
+
+    delete t1;
+    delete t2;
+    delete t3;
 
     printMem(MemoryAllocator::first);
     return 0;

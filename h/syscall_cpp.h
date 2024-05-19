@@ -13,5 +13,21 @@ void operator delete(void*) noexcept;
 void operator delete[](void*) noexcept;
 
 
+class Thread {
+public:
+    Thread (void (*body)(void*), void* arg);
+    virtual ~Thread ();
+    int start ();
+    static void dispatch ();
+    static int sleep (time_t);
+protected:
+    Thread ();
+    virtual void run () {}
+private:
+    thread_t myHandle;
+    void (*body)(void*); void* arg;
+};
+
+
 
 #endif //PROJEKAT_SYSCALL_CPP_H
