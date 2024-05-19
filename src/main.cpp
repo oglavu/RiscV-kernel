@@ -7,28 +7,48 @@
 #include "../h/MemoryAllocator.h"
 #include "../h/syscall_cpp.h"
 #include "../h/_thread.h"
+#include "../h/_sem.hpp"
 
-const int N = 20;
+struct args {
+    _sem* s;
+    Queue<char>* q;
+};
 
-int fib(int n, char c) {
-    if (n<2) return 1;
-    int ans = fib(n-1, c) + fib(n-2, c);
-    __putc(c); __putc('\n');
-    return ans;
+
+
+void consumer(void* arg) {
+    args* a = (args*) arg;
+    Queue<char>* q = a->q;
+    _sem* s = a->s;
+    while(true) {
+        s->wait();
+        char* c = Queue<char>::pop(q);
+        __putc('C');
+        __putc(*c);
+        __putc('\n');
+    }
 }
 
-void Afunc(void* p) {
-    fib(N, 'A');
+void producer(void* arg) {
+    args* a = (args*) arg;
+    Queue<char>* q = a->q;
+    _sem* s = a->s;
+    char init = 'a';
+    while(true) {
+        char* c = new char(init);
+        Queue<char>::push(q, c);
+        __putc('P');
+        __putc(*c);
+        __putc('\n');
+        s->signal();
+
+        init++;
+    }
+
 
 }
 
-void Bfunc(void* p) {
-    fib(N, 'B');
-}
 
-void Cfunc(void* p) {
-    fib(N, 'C');
-}
 
 void printMem(AVLTree* root) {
     AVLTree* cur = root;
@@ -56,46 +76,26 @@ void printMem(AVLTree* root) {
 }
 
 
-class ThreadA: public Thread {
-    void run() override {
-        Afunc(nullptr);
-    }
-};
-class ThreadB: public Thread {
-    void run() override {
-        Bfunc(nullptr);
-    }
-};
-class ThreadC: public Thread {
-public:
-    void run() override {
-        Cfunc(nullptr);
-    }
-};
-
-
 int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
+    _thread* t1, *t2;
+    args* arg = new args();
+    arg->q = new Queue<char>();
+    _sem::createSemaphore(&arg->s, 0);
 
-    Thread* t1 = new ThreadA();
-    Thread* t2 = new ThreadB();
-    Thread* t3 = new ThreadC();
-
-    t1->start();
-    t2->start();
-    t3->start();
+    thread_create(&t1, &consumer, (void*)arg);
+    thread_create(&t2, &producer, (void*)arg);
 
     while(1) {
-        Thread::dispatch();
+        thread_dispatch();
     }
 
 
     delete t1;
     delete t2;
-    delete t3;
 
     printMem(MemoryAllocator::first);
     return 0;

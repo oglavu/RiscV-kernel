@@ -38,8 +38,11 @@ public:
     static _thread* mainThread;
     static uint64 curPeriod;
 
+    void suspend() { this->state = ThreadState::Suspended; }
+    void unsuspend() { this->state = ThreadState::Ready; }
     uint64 getPeriods() const { return nPeriods; }
     bool isTerminated() const { return this->state == ThreadState::Terminated; }
+
     static int createThread(thread_p* handle, ThreadBody bodyy, void* arg, uint8* allocStackParam); // uint64 !!!!!!!!!!
     static int exitThread();
     static void dispatch();
