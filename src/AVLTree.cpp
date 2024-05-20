@@ -134,7 +134,7 @@ AVLTree* AVLTree::remove(AVLTree* root, AVLTree* node) {
         sn->right = r;
         sn->left = l;
         sn->parent = p;
-        return (p) ? root : sn;
+        return (p) ? root : ((sp) ? sp : sn);
     }
 
     if (node->sameSizePrev) {
