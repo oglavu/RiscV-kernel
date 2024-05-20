@@ -10,45 +10,10 @@
 #include "../h/_sem.hpp"
 
 struct args {
-    _sem* s;
+    _sem* empty;
+    _sem* full;
     Queue<char>* q;
 };
-
-
-
-void consumer(void* arg) {
-    args* a = (args*) arg;
-    Queue<char>* q = a->q;
-    _sem* s = a->s;
-    while(true) {
-        s->wait();
-        char* c = Queue<char>::pop(q);
-        __putc('C');
-        __putc(*c);
-        __putc('\n');
-    }
-}
-
-void producer(void* arg) {
-    args* a = (args*) arg;
-    Queue<char>* q = a->q;
-    _sem* s = a->s;
-    char init = 'a';
-    while(true) {
-        char* c = new char(init);
-        Queue<char>::push(q, c);
-        __putc('P');
-        __putc(*c);
-        __putc('\n');
-        s->signal();
-
-        init++;
-    }
-
-
-}
-
-
 
 void printMem(AVLTree* root) {
     AVLTree* cur = root;
@@ -75,6 +40,52 @@ void printMem(AVLTree* root) {
     __putc('\n');
 }
 
+void consumer(void* arg) {
+    args* a = (args*) arg;
+    Queue<char>* q = a->q;
+    _sem* e = a->empty;
+    _sem* f = a->full;
+    while(true) {
+        sem_wait(e);
+        char* c = Queue<char>::pop(q);
+        __putc('C');
+        __putc(*c);
+        __putc('\n');
+        sem_signal(f);
+        if (*c == 'z') {
+            delete c;
+            break;
+        }
+        printMem(MemoryAllocator::first);
+        delete c;
+    }
+
+}
+
+void producer(void* arg) {
+    args* a = (args*) arg;
+    Queue<char>* q = a->q;
+    _sem* e = a->empty;
+    _sem* f = a->full;
+    char init = 'a';
+    while(true) {
+        sem_wait(f);
+        char* c = new char(init);
+        Queue<char>::push(q, c);
+        __putc('P');
+        __putc(*c);
+        __putc('\n');
+        sem_signal(e);
+
+        if (init == 'z')
+            break;
+        init++;
+    }
+
+}
+
+
+
 
 int main() {
 
@@ -84,18 +95,25 @@ int main() {
     _thread* t1, *t2;
     args* arg = new args();
     arg->q = new Queue<char>();
-    _sem::createSemaphore(&arg->s, 0);
+    sem_open(&arg->empty, 0);
+    sem_open(&arg->full, 5);
 
     thread_create(&t1, &consumer, (void*)arg);
     thread_create(&t2, &producer, (void*)arg);
 
-    while(1) {
+    while(!t1->isTerminated() || !t2->isTerminated()) {
         thread_dispatch();
     }
 
+    sem_close(arg->empty);
+    sem_close(arg->full);
 
     delete t1;
     delete t2;
+    delete arg->empty;
+    delete arg->full;
+    delete arg->q;
+    delete arg;
 
     printMem(MemoryAllocator::first);
     return 0;

@@ -4,6 +4,7 @@
 
 #include "../h/MemoryAllocator.h"
 #include "../h/_thread.h"
+#include "../h/_sem.hpp"
 #include "../h/RiscV.h"
 
 namespace interruptHandlers {
@@ -15,6 +16,7 @@ namespace interruptHandlers {
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
+        return;
         if (!_thread::runningThread) return;
 
         uint64 n = ++_thread::curPeriod;
@@ -98,6 +100,27 @@ namespace interruptHandlers {
             case (uint64) RiscV::CodeOps::THR_YIEL:
                 _thread::curPeriod = 0;
                 _thread::dispatch();
+                break;
+            case (uint64) RiscV::CodeOps::SEM_OPEN:
+                retVal = _sem::createSemaphore((_sem**)a1, (unsigned)a2);
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::SEM_CLOS:
+                retVal = _sem::closeSemaphore((_sem**)a1);
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::SEM_WAIT:
+                retVal = ((_sem*)a1)->wait();
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::SEM_SIGN:
+                retVal = ((_sem*)a1)->signal();
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
             default:
                 break;
         }

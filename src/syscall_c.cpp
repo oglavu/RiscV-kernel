@@ -65,5 +65,50 @@ void thread_dispatch() {
     __asm__ volatile ("ecall");
 }
 
+int sem_open (sem_t* handle, unsigned init ) {
+    RiscV::a2W((uint64) init);
+    RiscV::a1W((uint64) handle);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_OPEN);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
+int sem_close (sem_t handle) {
+    RiscV::a1W((uint64) handle);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_CLOS);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
+int sem_wait (sem_t id){
+    RiscV::a1W((uint64) id);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_WAIT);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+int sem_signal (sem_t id) {
+
+    RiscV::a1W((uint64) id);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_SIGN);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
 
 

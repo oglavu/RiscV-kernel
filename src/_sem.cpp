@@ -19,7 +19,7 @@ int _sem::signal() {
     if (closed)
         return -1;
 
-    if ((int) n++ < 0) {
+    if ((int) ++n <= 0) {
         unblock();
     }
 
@@ -56,4 +56,9 @@ int _sem::createSemaphore(_sem **handle, unsigned int init) {
     *handle = new _sem(init);
     if (!*handle) return -1;
     return 0;
+}
+
+int _sem::closeSemaphore(_sem **handle) {
+    if (!handle) return -1;
+    return (*handle)->close();
 }

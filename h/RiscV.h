@@ -18,6 +18,10 @@ public:
         THR_CREA = 0x11,
         THR_EXIT = 0x12,
         THR_YIEL = 0x13,
+        SEM_OPEN = 0x21,
+        SEM_CLOS = 0x22,
+        SEM_WAIT = 0x23,
+        SEM_SIGN = 0x24,
     };
 
     enum BitMaskSStatus: uint64 {
