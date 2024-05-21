@@ -58,7 +58,7 @@ int _sem::createSemaphore(_sem **handle, unsigned int init) {
     return 0;
 }
 
-int _sem::closeSemaphore(_sem **handle) {
+int _sem::closeSemaphore(_sem *handle) {
     if (!handle) return -1;
-    return (*handle)->close();
+    return handle->close();
 }

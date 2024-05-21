@@ -107,7 +107,7 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_CLOS:
-                retVal = _sem::closeSemaphore((_sem**)a1);
+                retVal = _sem::closeSemaphore((_sem*)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
