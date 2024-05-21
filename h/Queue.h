@@ -28,6 +28,9 @@ private:
     Node* head;
     Node* last;
 
+    void* getHeadNodeAddr() const { return (void*)head; }
+    void remove(void* ptr);
+
 public:
     Queue() = default;
     Queue(const Queue<T>&) = delete;
@@ -41,7 +44,17 @@ public:
 
     ~Queue();
 
+    friend class _sem;
 };
+
+template<typename T>
+void Queue<T>::remove(void *ptr) {
+    T* swapData = Queue<T>::pop(this);
+    if (!head) {
+        Node* node = (Node*)ptr;
+        node->data = swapData;
+    }
+}
 
 template<typename T>
 Queue<T>::~Queue() {
