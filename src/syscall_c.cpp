@@ -110,5 +110,17 @@ int sem_signal (sem_t id) {
     return (int) retVal;
 }
 
+int sem_timedwait(sem_t id, time_t time) {
+    RiscV::a2W((uint64) time);
+    RiscV::a1W((uint64) id);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_TMDW);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
 
 

@@ -6,6 +6,7 @@
 #define PROJEKAT__THREAD_H
 
 #include "Scheduler.h"
+#include "_sem.hpp"
 #include "syscall_cpp.h"
 
 class _thread {

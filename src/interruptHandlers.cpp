@@ -16,9 +16,10 @@ namespace interruptHandlers {
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
-        return;
         if (!_thread::runningThread) return;
+        if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 
+        return;
         uint64 n = ++_thread::curPeriod;
         if (n >= _thread::runningThread->getPeriods()) {
             uint64 volatile sepc = RiscV::sepcR();
@@ -118,6 +119,11 @@ namespace interruptHandlers {
                 break;
             case (uint64) RiscV::CodeOps::SEM_SIGN:
                 retVal = ((_sem*)a1)->signal();
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::SEM_TMDW:
+                retVal = _sem::timedWait((_sem*)a1, (time_t)a2);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;

@@ -10,9 +10,8 @@
 #include "../h/_sem.hpp"
 
 struct args {
-    _sem* empty;
-    _sem* full;
-    Queue<char>* q;
+    _sem* s;
+    char id = 0;
 };
 
 void printMem(AVLTree* root) {
@@ -42,45 +41,19 @@ void printMem(AVLTree* root) {
 
 void consumer(void* arg) {
     args* a = (args*) arg;
-    Queue<char>* q = a->q;
-    _sem* e = a->empty;
-    _sem* f = a->full;
-    while(true) {
-        sem_wait(e);
-        char* c = Queue<char>::pop(q);
-        __putc('C');
-        __putc(*c);
-        __putc('\n');
-        sem_signal(f);
-        if (*c == 'z') {
-            delete c;
-            break;
-        }
-        printMem(MemoryAllocator::first);
-        delete c;
-    }
+
+    if (sem_timedwait(a->s, 1) < 0) {
+        __putc('T');
+    } else
+        __putc('E');
+    __putc(a->id + '0');
+    __putc('\n');
 
 }
 
 void producer(void* arg) {
     args* a = (args*) arg;
-    Queue<char>* q = a->q;
-    _sem* e = a->empty;
-    _sem* f = a->full;
-    char init = 'a';
-    while(true) {
-        sem_wait(f);
-        char* c = new char(init);
-        Queue<char>::push(q, c);
-        __putc('P');
-        __putc(*c);
-        __putc('\n');
-        sem_signal(e);
-
-        if (init == 'z')
-            break;
-        init++;
-    }
+    a->s->signal();
 
 }
 
@@ -92,28 +65,37 @@ int main() {
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
-    _thread* t1, *t2;
-    args* arg = new args();
-    arg->q = new Queue<char>();
-    sem_open(&arg->empty, 0);
-    sem_open(&arg->full, 5);
+    _thread* t1, *t2, *t3, *t4, *t5;
+    args* arg = new args[5]; char id = 0;
+    sem_open(&arg[0].s, 0);
+    for (int i=0; i<5; i++) {
+        arg[i].s = arg[0].s;
+        arg[i].id = id++;
+    }
 
-    thread_create(&t1, &consumer, (void*)arg);
-    thread_create(&t2, &producer, (void*)arg);
 
-    while(!t1->isTerminated() || !t2->isTerminated()) {
+    thread_create(&t2, &consumer, (void*)&arg[1]);
+    thread_create(&t3, &consumer, (void*)&arg[2]);
+    thread_create(&t5, &producer, (void*)&arg[0]);
+    thread_create(&t4, &consumer, (void*)&arg[3]);
+    thread_create(&t1, &producer, (void*)&arg[0]);
+
+
+
+    while(!t1->isTerminated() || !t2->isTerminated() ||
+        !t3->isTerminated() || !t4->isTerminated()|| !t5->isTerminated()) {
         thread_dispatch();
     }
 
-    sem_close(arg->empty);
-    sem_close(arg->full);
+    sem_close(arg->s);
 
     delete t1;
     delete t2;
-    delete arg->empty;
-    delete arg->full;
-    delete arg->q;
-    delete arg;
+    delete t3;
+    delete t4;
+    delete t5;
+    delete arg->s;
+    delete[] arg;
 
     printMem(MemoryAllocator::first);
     return 0;

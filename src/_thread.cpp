@@ -19,7 +19,7 @@ _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UI
     context.sp = stackStartAddr + sizeof(uint8)*DEFAULT_STACK_SIZE; // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     context.ra = (uint64) &_thread::wrap;
     state = ThreadState::Ready;
-    Scheduler::put(this);
+    if (body) Scheduler::put(this);
 }
 
 void _thread::dispatch() {
@@ -30,8 +30,20 @@ void _thread::dispatch() {
         Scheduler::put(oldR);
     }
 
-    _thread *newR = Scheduler::get();
-    if (newR && oldR != newR) {
+    _thread* newR;
+    if (_sem::timed && _sem::timeAbs == 0) {
+        newR = _sem::timed->thr;
+        _sem::timed->sem->removeBlocked();
+        _sem::timed->sem->timedOut = true;
+        _sem::timeAbs = (_sem::timed->next) ? _sem::timed->next->timeRel : 0;
+        int* ptr = (int*)_sem::timed;
+        _sem::timed = _sem::timed->next;
+        delete ptr;
+    } else
+        newR = Scheduler::get();
+
+
+    if (newR) {
         _thread::runningThread = newR;
         _thread::runningThread->state = ThreadState::Running;
         _thread::contextSwitch(&oldR->context, &newR->context);

@@ -14,20 +14,32 @@ class _sem {
 private:
     uint32 n;
     bool closed = false;
+    bool timedOut = false;
     Queue<_thread>* blocked;
+
+    struct DataPack {
+        DataPack* next = nullptr;
+        _sem* sem;
+        _thread* thr;
+        time_t timeRel;
+        void* nodeAddr;
+    };
+    void removeBlocked();
 
     explicit _sem(uint32 val):
             n(val), blocked(new Queue<_thread>()) {}
 
     void block();
     void unblock();
-
     int close();
 
 public:
+    static DataPack* timed;
+    static time_t timeAbs;
 
     static int createSemaphore(_sem** handle, unsigned init);
     static int closeSemaphore(_sem* handle);
+    static int timedWait(_sem* handle, time_t time);
 
     int wait();
     int signal();
@@ -37,6 +49,9 @@ public:
         close();
         delete blocked;
     }
+
+    friend class _thread;
+
 };
 
 
