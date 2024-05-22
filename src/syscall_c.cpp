@@ -133,5 +133,16 @@ int sem_trywait(sem_t id) {
     return (int) retVal;
 }
 
+int time_sleep (time_t time) {
+    RiscV::a1W((uint64) time);
+    RiscV::a0W((uint64) RiscV::CodeOps::THR_SLEE);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
 
 

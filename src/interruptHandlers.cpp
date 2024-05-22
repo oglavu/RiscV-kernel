@@ -132,6 +132,11 @@ namespace interruptHandlers {
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
+            case (uint64) RiscV::CodeOps::THR_SLEE:
+                retVal = 0;
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
             default:
                 break;
         }
