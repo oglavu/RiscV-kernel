@@ -120,5 +120,29 @@ PeriodicThread::~PeriodicThread() {
 }
 
 
+/* -------- SEMAPHORE ---------- */
+Semaphore::Semaphore(unsigned int init) {
+    sem_open(&this->myHandle, init);
+}
+
+Semaphore::~Semaphore() {
+    sem_close(this->myHandle);
+}
+
+int Semaphore::wait() {
+    return sem_wait(this->myHandle);
+}
+
+int Semaphore::signal() {
+    return sem_signal(this->myHandle);
+}
+
+int Semaphore::timedWait(time_t t) {
+    return sem_timedwait(this->myHandle, t);
+}
+
+int Semaphore::tryWait() {
+    return sem_trywait(this->myHandle);
+}
 
 
