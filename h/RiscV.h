@@ -23,6 +23,7 @@ public:
         SEM_WAIT = 0x23,
         SEM_SIGN = 0x24,
         SEM_TMDW = 0x25,
+        SEM_TRYW = 0x26,
     };
 
     enum BitMaskSStatus: uint64 {

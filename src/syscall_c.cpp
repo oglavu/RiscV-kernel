@@ -122,5 +122,16 @@ int sem_timedwait(sem_t id, time_t time) {
     return (int) retVal;
 }
 
+int sem_trywait(sem_t id) {
+    RiscV::a1W((uint64) id);
+    RiscV::a0W((uint64) RiscV::CodeOps::SEM_TRYW);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
 
 

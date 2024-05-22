@@ -135,3 +135,10 @@ int _sem::timedWait(_sem *handle, time_t time) {
 void _sem::removeBlocked() {
     blocked->remove(_sem::timed->nodeAddr);
 }
+
+int _sem::tryWait(_sem *handle) {
+    if (handle->closed)
+        return -1;
+
+    return ((int)handle->n > 0);
+}

@@ -40,6 +40,7 @@ public:
     static int createSemaphore(_sem** handle, unsigned init);
     static int closeSemaphore(_sem* handle);
     static int timedWait(_sem* handle, time_t time);
+    static int tryWait(_sem* handle);
 
     int wait();
     int signal();

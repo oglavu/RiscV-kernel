@@ -29,6 +29,7 @@ int sem_close (sem_t handle);
 int sem_wait (sem_t id);
 int sem_signal (sem_t id);
 int sem_timedwait(sem_t id, time_t time);
+int sem_trywait(sem_t id);
 
 
 #endif //PROJEKAT_SYSCALL_C_H
