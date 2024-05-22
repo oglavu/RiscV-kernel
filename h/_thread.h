@@ -19,6 +19,12 @@ private:
         uint64 sp, ra;
     };
 
+    struct SleepNode {
+        SleepNode* next = nullptr;
+        time_t timeRel;
+        _thread* thread;
+    };
+
     _thread* parentThread;
     Context context;
     _thread::ThreadBody body;
@@ -39,12 +45,16 @@ public:
     static _thread* mainThread;
     static uint64 curPeriod;
 
+    static SleepNode* sleepList;
+    static time_t sleepTimeFirst;
+
     void suspend() { this->state = ThreadState::Suspended; }
     void unsuspend() { this->state = ThreadState::Ready; }
     uint64 getPeriods() const { return nPeriods; }
     bool isTerminated() const { return this->state == ThreadState::Terminated; }
 
     static int createThread(thread_p* handle, ThreadBody bodyy, void* arg, uint8* allocStackParam); // uint64 !!!!!!!!!!
+    static int sleepThread(time_t);
     static int exitThread();
     static void dispatch();
     static void yield();

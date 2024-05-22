@@ -6,6 +6,8 @@
 
 _thread* _thread::runningThread = nullptr;
 _thread* _thread::mainThread = nullptr;
+_thread::SleepNode* _thread::sleepList = nullptr;
+time_t _thread::sleepTimeFirst = 0;
 uint64 _thread::curPeriod = 0;
 
 _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -87,4 +89,34 @@ int _thread::exitThread() {
 void _thread::yield() {
     RiscV::a0W(RiscV::CodeOps::THR_YIEL);
     __asm__ volatile ("ecall");
+}
+
+int _thread::sleepThread(time_t time) {
+    if (time == 0) return 0;
+
+    SleepNode* sn = new SleepNode;
+    sn->thread = _thread::runningThread;
+    if (!_thread::sleepList || _thread::sleepTimeFirst > time) {
+        sn->next = _thread::sleepList;
+        if (_thread::sleepList)
+            _thread::sleepList->timeRel = _thread::sleepTimeFirst - time;
+        _thread::sleepList = sn;
+        _thread::sleepList->timeRel = 0;
+        _thread::sleepTimeFirst = time;
+    } else {
+        time -= _thread::sleepTimeFirst;
+        SleepNode* cur = _thread::sleepList;
+        while (cur->next && cur->next->timeRel < time) {
+            cur = cur->next;
+            time -= cur->timeRel;
+        }
+        sn->timeRel = time;
+        sn->next = cur->next;
+        cur->next = sn;
+    }
+
+    _thread::runningThread->suspend();
+    _thread::yield();
+    return 0;
+
 }

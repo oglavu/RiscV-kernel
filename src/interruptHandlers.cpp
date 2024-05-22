@@ -19,6 +19,14 @@ namespace interruptHandlers {
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 
+        if (_thread::sleepTimeFirst != 0) _thread::sleepTimeFirst--;
+        else if (_thread::sleepList){
+            Scheduler::put(_thread::sleepList->thread);
+            int* toDel = (int*) _thread::sleepList;
+            _thread::sleepList = _thread::sleepList->next;
+            delete toDel;
+            _thread::sleepTimeFirst = (_thread::sleepList) ? _thread::sleepList->timeRel : 0;
+        }
         return;
         uint64 n = ++_thread::curPeriod;
         if (n >= _thread::runningThread->getPeriods()) {
@@ -133,7 +141,7 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_SLEE:
-                retVal = 0;
+                retVal = _thread::sleepThread((time_t)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;

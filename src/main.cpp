@@ -40,13 +40,9 @@ void printMem(AVLTree* root) {
 }
 
 void consumer(void* arg) {
-    args* a = (args*) arg;
 
-    if (sem_timedwait(a->s, 1) < 0) {
-        __putc('T');
-    } else
-        __putc('E');
-    __putc(a->id + '0');
+    time_sleep(*(int*)arg);
+    __putc(*(int*)arg + '0');
     __putc('\n');
 
 }
@@ -65,37 +61,22 @@ int main() {
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
-    _thread* t1, *t2, *t3, *t4, *t5;
-    args* arg = new args[5]; char id = 0;
-    sem_open(&arg[0].s, 0);
-    for (int i=0; i<5; i++) {
-        arg[i].s = arg[0].s;
-        arg[i].id = id++;
-    }
+    _thread* t1, *t2;
+    int* a1 = new int(6);
+    int* a2 = new int(2);
 
+    thread_create(&t1, &consumer, a1);
+    thread_create(&t2, &consumer, a2);
 
-    thread_create(&t2, &consumer, (void*)&arg[1]);
-    thread_create(&t3, &consumer, (void*)&arg[2]);
-    thread_create(&t5, &producer, (void*)&arg[0]);
-    thread_create(&t4, &consumer, (void*)&arg[3]);
-    thread_create(&t1, &producer, (void*)&arg[0]);
-
-
-
-    while(!t1->isTerminated() || !t2->isTerminated() ||
-        !t3->isTerminated() || !t4->isTerminated()|| !t5->isTerminated()) {
+    while(!t1->isTerminated() || !t2->isTerminated() ) {
         thread_dispatch();
     }
 
-    sem_close(arg->s);
 
     delete t1;
     delete t2;
-    delete t3;
-    delete t4;
-    delete t5;
-    delete arg->s;
-    delete[] arg;
+    delete a1;
+    delete a2;
 
     printMem(MemoryAllocator::first);
     return 0;
