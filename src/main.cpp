@@ -6,13 +6,6 @@
 #include "../h/syscall_c.h"
 #include "../h/MemoryAllocator.h"
 #include "../h/syscall_cpp.h"
-#include "../h/_thread.h"
-#include "../h/_sem.hpp"
-
-struct args {
-    _sem* s;
-    char id = 0;
-};
 
 void printMem(AVLTree* root) {
     AVLTree* cur = root;
@@ -39,20 +32,53 @@ void printMem(AVLTree* root) {
     __putc('\n');
 }
 
-void consumer(void* arg) {
 
-    time_sleep(*(int*)arg);
-    __putc(*(int*)arg + '0');
-    __putc('\n');
+class ThreadA: public PeriodicThread {
+public:
+    ThreadA(time_t t): PeriodicThread(t) {}
+protected:
+    int i=0;
+    void periodicActivation () override {
+        if (i > 100) return;
+        __putc('A');
+        __putc(i+'0');
+        __putc('\n');
+        i++;
+    }
+};
 
+class ThreadB: public PeriodicThread {
+public:
+    ThreadB(time_t t): PeriodicThread(t) {}
+protected:
+    int i = 0;
+    void periodicActivation () override {
+        if (i > 100) return;
+        __putc('B');
+        __putc(i+'0');
+        __putc('\n');
+        i++;
+    }
+};
+
+class ThreadC: public PeriodicThread {
+public:
+    ThreadC(time_t t): PeriodicThread(t) {}
+protected:
+    int i = 0;
+    void periodicActivation () override {
+        if (i > 100) return;
+        __putc('C');
+        __putc(i+'0');
+        __putc('\n');
+        i++;
+    }
+};
+
+void busyWait(void* arg) {
+    while(*(bool*)arg)
+        thread_dispatch();
 }
-
-void producer(void* arg) {
-    args* a = (args*) arg;
-    a->s->signal();
-
-}
-
 
 
 
@@ -61,22 +87,35 @@ int main() {
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
-    _thread* t1, *t2;
-    int* a1 = new int(6);
-    int* a2 = new int(2);
+    bool* b = new bool(true);
 
-    thread_create(&t1, &consumer, a1);
-    thread_create(&t2, &consumer, a2);
+    Thread* busyThread = new Thread(&busyWait, b);
+    ThreadA* t1 = new ThreadA(2);
+    ThreadB* t2 = new ThreadB(5);
+    ThreadC* t3 = new ThreadC(10);
 
-    while(!t1->isTerminated() || !t2->isTerminated() ) {
-        thread_dispatch();
-    }
+    t1->start();
+    t2->start();
+    t3->start();
+    busyThread->start();
 
+    time_sleep(50);
+
+    t1->terminate();
+    t2->terminate();
+    t3->terminate();
+
+    time_sleep(20);
+
+    *b = false;
+
+    thread_dispatch();
 
     delete t1;
     delete t2;
-    delete a1;
-    delete a2;
+    delete t3;
+    delete busyThread;
+    delete b;
 
     printMem(MemoryAllocator::first);
     return 0;

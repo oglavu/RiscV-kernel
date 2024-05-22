@@ -21,11 +21,13 @@ namespace interruptHandlers {
 
         if (_thread::sleepTimeFirst != 0) _thread::sleepTimeFirst--;
         else if (_thread::sleepList){
+            _thread::sleepList->thread->unsuspend();
             Scheduler::put(_thread::sleepList->thread);
             int* toDel = (int*) _thread::sleepList;
             _thread::sleepList = _thread::sleepList->next;
             delete toDel;
             _thread::sleepTimeFirst = (_thread::sleepList) ? _thread::sleepList->timeRel : 0;
+            if (_thread::sleepList) _thread::sleepList->timeRel = 0;
         }
         return;
         uint64 n = ++_thread::curPeriod;

@@ -49,7 +49,7 @@ public:
     static time_t sleepTimeFirst;
 
     void suspend() { this->state = ThreadState::Suspended; }
-    void unsuspend() { this->state = ThreadState::Ready; }
+    void unsuspend() { if (state == Suspended) this->state = ThreadState::Ready; }
     uint64 getPeriods() const { return nPeriods; }
     bool isTerminated() const { return this->state == ThreadState::Terminated; }
 
