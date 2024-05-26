@@ -25,6 +25,12 @@ public:
         SEM_TMDW = 0x25,
         SEM_TRYW = 0x26,
         THR_SLEE = 0x31,
+        CON_GETC = 0x41,
+        CON_PUTC = 0x42
+    };
+
+    enum HardwareEntries: uint64 {
+        IRQ_CONS = 0x0a,
     };
 
     enum BitMaskSStatus: uint64 {

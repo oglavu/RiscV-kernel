@@ -78,9 +78,6 @@ void* MemoryAllocator::mem_alloc(size_t size) {
     }
     freeSeg->isFree = false;
 
-    if (!checkSameAmount())
-        __putc('E');
-
     return (void*) ((uint64)freeSeg + HEADER_SIZE);
 }
 
@@ -122,8 +119,6 @@ int MemoryAllocator::mem_free(void *ptr) {
     MemoryAllocator::first = (toSwap) ? AVLTree::swapLL(toSwap, cur, MemoryAllocator::first) :
                              AVLTree::insertLL(cur, MemoryAllocator::first);
 
-    if (!checkSameAmount())
-        __putc('E');
 
     return 0;
 }

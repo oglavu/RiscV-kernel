@@ -35,3 +35,7 @@ void *Buffer::operator new(size_t sz) {
 void Buffer::operator delete(void *p) {
     MemoryAllocator::mem_free(p);
 }
+
+bool Buffer::isEmpty() {
+    return itemAvailable->value() == 0;
+}

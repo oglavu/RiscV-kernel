@@ -144,5 +144,22 @@ int time_sleep (time_t time) {
     return (int) retVal;
 }
 
+char getc() {
+    RiscV::a0W((uint64) RiscV::CodeOps::CON_GETC);
+
+    __asm__ volatile ("ecall");
+
+    uint64 retVal;
+    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
+    return (int) retVal;
+}
+
+void putc(char c) {
+    RiscV::a1W((uint64) c);
+    RiscV::a0W((uint64) RiscV::CodeOps::CON_PUTC);
+
+    __asm__ volatile ("ecall");
+}
+
 
 

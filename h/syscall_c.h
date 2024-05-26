@@ -34,4 +34,7 @@ int sem_trywait(sem_t id);
 int time_sleep (time_t time);
 
 
+char getc();
+void putc(char c);
+
 #endif //PROJEKAT_SYSCALL_C_H

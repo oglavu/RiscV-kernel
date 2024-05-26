@@ -17,6 +17,7 @@ public:
 
     char getc();
     void putc(char);
+    bool isEmpty();
 
     void* operator new(size_t sz);
     void operator delete(void* p);
@@ -26,7 +27,7 @@ private:
 
     _sem* spaceAvailable;
     _sem* itemAvailable;
-    static const uint64 SIZE = 128;
+    static const uint64 SIZE = 512;
     uint64 start = 0, end = 0;
     char array[SIZE];
 

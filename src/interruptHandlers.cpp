@@ -4,18 +4,48 @@
 
 #include "../h/MemoryAllocator.h"
 #include "../h/_thread.h"
+#include "../h/Buffer.hpp"
 #include "../h/_sem.hpp"
 #include "../h/RiscV.h"
 
 namespace interruptHandlers {
 
     void handleConsoleInterrupt() {
-        console_handler();
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
+        uint64 sepc = RiscV::sepcR();
+        uint64 sstatus = RiscV::sstatusR();
+        //  console interrupt (supervisor external interrupt)
+        if (plic_claim() == RiscV::HardwareEntries::IRQ_CONS){
+
+            char status = *(char*)CONSOLE_STATUS;
+            while (CONSOLE_RX_STATUS_BIT & status){
+                char ch = *(char*) CONSOLE_RX_DATA;
+                Buffer::inBuffer->putc(ch);
+                status = *(char*)CONSOLE_STATUS;
+            }
+
+            status = *(char*)CONSOLE_STATUS;
+            while (!Buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
+                *(char*) CONSOLE_RX_DATA = Buffer::outBuffer->getc();
+                status = *(char*)CONSOLE_STATUS;
+            }
+        }
+        plic_complete(CONSOLE_IRQ);
+        RiscV::sstatusW(sstatus);
+        RiscV::sepcW(sepc);
     }
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
+
+        char status = *(char*)CONSOLE_STATUS;
+        while (!Buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
+            *(char*) CONSOLE_RX_DATA = Buffer::outBuffer->getc();
+            status = *(char*)CONSOLE_STATUS;
+        }
+
+
+
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 
@@ -146,6 +176,14 @@ namespace interruptHandlers {
                 retVal = _thread::sleepThread((time_t)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::CON_GETC:
+                retVal = (uint64)Buffer::inBuffer->getc();
+                __asm__ volatile ("mv t0, %0" : : "r"(retVal));
+                __asm__ volatile ("sd t0, 80(fp)");
+                break;
+            case (uint64) RiscV::CodeOps::CON_PUTC:
+                Buffer::outBuffer->putc((char)a1);
                 break;
             default:
                 break;

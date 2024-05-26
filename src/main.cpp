@@ -6,6 +6,7 @@
 #include "../h/syscall_c.h"
 #include "../h/MemoryAllocator.h"
 #include "../h/syscall_cpp.h"
+#include "../h/Buffer.hpp"
 
 void printMem(AVLTree* root) {
     AVLTree* cur = root;
@@ -22,14 +23,14 @@ void printMem(AVLTree* root) {
         }
 
         if (cur && addr < freeStart)
-            __putc('|');
+            putc('|');
         else
-            __putc('.');
+            putc('.');
 
-        if ((i+1) % (N/R) == 0) __putc('\n');
+        if ((i+1) % (N/R) == 0) putc('\n');
 
     }
-    __putc('\n');
+    putc('\n');
 }
 
 
@@ -40,9 +41,9 @@ protected:
     int i=0;
     void periodicActivation () override {
         if (i > 100) return;
-        __putc('A');
-        __putc(i+'0');
-        __putc('\n');
+        putc('A');
+        putc(i+'0');
+        putc('\n');
         i++;
     }
 };
@@ -54,9 +55,9 @@ protected:
     int i = 0;
     void periodicActivation () override {
         if (i > 100) return;
-        __putc('B');
-        __putc(i+'0');
-        __putc('\n');
+        putc('B');
+        putc(i+'0');
+        putc('\n');
         i++;
     }
 };
@@ -68,9 +69,9 @@ protected:
     int i = 0;
     void periodicActivation () override {
         if (i > 100) return;
-        __putc('C');
-        __putc(i+'0');
-        __putc('\n');
+        putc('C');
+        putc(i+'0');
+        putc('\n');
         i++;
     }
 };
@@ -85,14 +86,21 @@ void busyWait(void* arg) {
 int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
+
+
+    Buffer::inBuffer = new Buffer();
+    Buffer::outBuffer = new Buffer();
+
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
-    bool* b = new bool(true);
+    printMem(MemoryAllocator::first);
 
-    Thread* busyThread = new Thread(&busyWait, b);
     ThreadA* t1 = new ThreadA(2);
     ThreadB* t2 = new ThreadB(5);
     ThreadC* t3 = new ThreadC(10);
+    bool* b = new bool(true);
+
+    Thread* busyThread = new Thread(&busyWait, b);
 
     t1->start();
     t2->start();
@@ -116,7 +124,8 @@ int main() {
     delete t3;
     delete busyThread;
     delete b;
-
-    printMem(MemoryAllocator::first);
+    delete Buffer::inBuffer;
+    delete Buffer::outBuffer;
+    delete Scheduler::readyQueue;
     return 0;
 }

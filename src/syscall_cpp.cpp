@@ -146,3 +146,10 @@ int Semaphore::tryWait() {
 }
 
 
+char Console::getc() {
+    return ::getc();
+}
+
+void Console::putc(char chr) {
+    return ::putc(chr);
+}
