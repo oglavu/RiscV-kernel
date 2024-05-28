@@ -2,11 +2,11 @@
 // Created by os on 5/4/24.
 //
 
-#include "../h/MemoryAllocator.h"
-#include "../h/_thread.h"
+#include "../h/MemoryAllocator.hpp"
+#include "../h/_thread.hpp"
 #include "../h/_buffer.hpp"
 #include "../h/_sem.hpp"
-#include "../h/RiscV.h"
+#include "../h/RiscV.hpp"
 
 namespace interruptHandlers {
 

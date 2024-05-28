@@ -6,7 +6,7 @@
 #define PROJEKAT__BUFFER_HPP
 
 #include "_sem.hpp"
-#include "MemoryAllocator.h"
+#include "MemoryAllocator.hpp"
 
 
 class _buffer {

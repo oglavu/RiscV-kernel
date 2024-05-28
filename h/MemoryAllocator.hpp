@@ -2,11 +2,11 @@
 // Created by os on 5/1/24.
 //
 
-#ifndef PROJEKAT_MEMORYALLOCATOR_H
-#define PROJEKAT_MEMORYALLOCATOR_H
+#ifndef PROJEKAT_MEMORYALLOCATOR_HPP
+#define PROJEKAT_MEMORYALLOCATOR_HPP
 
 #include "../lib/hw.h"
-#include "AVLTree.h"
+#include "AVLTree.hpp"
 
 class MemoryAllocator {
 private:
@@ -34,4 +34,4 @@ public:
 };
 
 
-#endif //PROJEKAT_MEMORYALLOCATOR_H
+#endif //PROJEKAT_MEMORYALLOCATOR_HPP

@@ -2,8 +2,8 @@
 // Created by os on 5/1/24.
 //
 
-#ifndef PROJEKAT_AVLTREE_H
-#define PROJEKAT_AVLTREE_H
+#ifndef PROJEKAT_AVLTREE_HPP
+#define PROJEKAT_AVLTREE_HPP
 
 #include "../lib/hw.h"
 #include "../lib/console.h"
@@ -41,4 +41,4 @@ public:
 };
 
 
-#endif //PROJEKAT_AVLTREE_H
+#endif //PROJEKAT_AVLTREE_HPP

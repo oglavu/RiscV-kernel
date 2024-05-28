@@ -2,8 +2,8 @@
 // Created by os on 5/6/24.
 //
 
-#ifndef PROJEKAT_QUEUE_H
-#define PROJEKAT_QUEUE_H
+#ifndef PROJEKAT_QUEUE_HPP
+#define PROJEKAT_QUEUE_HPP
 
 #include "syscall_c.h"
 
@@ -122,4 +122,4 @@ void Queue<T>::Node::operator delete(void* p) {
 
 
 
-#endif //PROJEKAT_QUEUE_H
+#endif //PROJEKAT_QUEUE_HPP

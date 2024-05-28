@@ -2,7 +2,7 @@
 // Created by os on 5/8/24.
 //
 
-#include "../h/_thread.h"
+#include "../h/_thread.hpp"
 
 _thread* _thread::runningThread = nullptr;
 _thread* _thread::mainThread = nullptr;

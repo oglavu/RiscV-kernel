@@ -2,12 +2,12 @@
 // Created by os on 5/8/24.
 //
 
-#ifndef PROJEKAT__THREAD_H
-#define PROJEKAT__THREAD_H
+#ifndef PROJEKAT__THREAD_HPP
+#define PROJEKAT__THREAD_HPP
 
-#include "Scheduler.h"
+#include "Scheduler.hpp"
 #include "_sem.hpp"
-#include "syscall_cpp.h"
+#include "syscall_cpp.hpp"
 
 class _thread {
 private:
@@ -67,4 +67,4 @@ public:
 };
 
 
-#endif //PROJEKAT__THREAD_H
+#endif //PROJEKAT__THREAD_HPP

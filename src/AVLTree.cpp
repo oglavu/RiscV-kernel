@@ -2,7 +2,7 @@
 // Created by os on 5/1/24.
 //
 
-#include "../h/AVLTree.h"
+#include "../h/AVLTree.hpp"
 
 AVLTree* AVLTree::findFreeSeg(AVLTree* root, size_t size) {
     AVLTree* cur = root, *BestFit = nullptr;

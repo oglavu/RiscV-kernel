@@ -6,9 +6,9 @@
 #define PROJEKAT__SEM_HPP
 
 #include "../lib/hw.h"
-#include "Queue.h"
-#include "_thread.h"
-#include "Scheduler.h"
+#include "Queue.hpp"
+#include "_thread.hpp"
+#include "Scheduler.hpp"
 
 class _sem {
 private:

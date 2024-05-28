@@ -2,11 +2,11 @@
 // Created by os on 5/6/24.
 //
 
-#ifndef PROJEKAT_SCHEDULER_H
-#define PROJEKAT_SCHEDULER_H
+#ifndef PROJEKAT_SCHEDULER_HPP
+#define PROJEKAT_SCHEDULER_HPP
 
-#include "Queue.h"
-#include "syscall_cpp.h"
+#include "Queue.hpp"
+#include "syscall_cpp.hpp"
 
 class _thread;
 
@@ -30,4 +30,4 @@ private:
 };
 
 
-#endif //PROJEKAT_SCHEDULER_H
+#endif //PROJEKAT_SCHEDULER_HPP

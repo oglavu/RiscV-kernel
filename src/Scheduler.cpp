@@ -2,7 +2,7 @@
 // Created by os on 5/6/24.
 //
 
-#include "../h/Scheduler.h"
+#include "../h/Scheduler.hpp"
 
 bool Scheduler::initialised = false;
 Queue<_thread>* Scheduler::readyQueue = nullptr;

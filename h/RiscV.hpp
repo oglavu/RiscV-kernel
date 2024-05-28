@@ -2,8 +2,8 @@
 // Created by os on 5/4/24.
 //
 
-#ifndef PROJEKAT_RISCV_H
-#define PROJEKAT_RISCV_H
+#ifndef PROJEKAT_RISCV_HPP
+#define PROJEKAT_RISCV_HPP
 
 #include "../lib/hw.h"
 
@@ -209,4 +209,4 @@ inline void RiscV::a4W(uint64 val) {
 }
 
 
-#endif //PROJEKAT_RISCV_H
+#endif //PROJEKAT_RISCV_HPP

@@ -4,8 +4,8 @@
 
 #include "../lib/console.h"
 #include "../h/syscall_c.h"
-#include "../h/MemoryAllocator.h"
-#include "../h/syscall_cpp.h"
+#include "../h/MemoryAllocator.hpp"
+#include "../h/syscall_cpp.hpp"
 #include "../h/_buffer.hpp"
 
 void printMem(AVLTree* root) {

@@ -6,7 +6,7 @@
 #define PROJEKAT_SYSCALL_C_H
 
 #include "../lib/hw.h"
-#include "../h/RiscV.h"
+#include "../h/RiscV.hpp"
 
 void* mem_alloc(size_t size);
 int mem_free(void*);

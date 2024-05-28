@@ -2,7 +2,7 @@
 // Created by os on 5/4/24.
 //
 
-#include "../h/RiscV.h"
+#include "../h/RiscV.hpp"
 
 
 void RiscV::popSppSpie() {

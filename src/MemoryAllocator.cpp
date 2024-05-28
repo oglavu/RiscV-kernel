@@ -2,7 +2,7 @@
 // Created by os on 5/1/24.
 //
 
-#include "../h/MemoryAllocator.h"
+#include "../h/MemoryAllocator.hpp"
 
 AVLTree* MemoryAllocator::free = nullptr;
 AVLTree* MemoryAllocator::first = nullptr;

@@ -2,7 +2,7 @@
 // Created by os on 5/4/24.
 //
 
-#include "../h/syscall_cpp.h"
+#include "../h/syscall_cpp.hpp"
 
 _node* PeriodicThread::pendingTermination = nullptr;
 
