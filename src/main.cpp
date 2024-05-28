@@ -6,7 +6,7 @@
 #include "../h/syscall_c.h"
 #include "../h/MemoryAllocator.h"
 #include "../h/syscall_cpp.h"
-#include "../h/Buffer.hpp"
+#include "../h/_buffer.hpp"
 
 void printMem(AVLTree* root) {
     AVLTree* cur = root;
@@ -88,8 +88,8 @@ int main() {
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
 
 
-    Buffer::inBuffer = new Buffer();
-    Buffer::outBuffer = new Buffer();
+    _buffer::inBuffer = new _buffer();
+    _buffer::outBuffer = new _buffer();
 
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
 
@@ -124,8 +124,8 @@ int main() {
     delete t3;
     delete busyThread;
     delete b;
-    delete Buffer::inBuffer;
-    delete Buffer::outBuffer;
+    delete _buffer::inBuffer;
+    delete _buffer::outBuffer;
     delete Scheduler::readyQueue;
     return 0;
 }

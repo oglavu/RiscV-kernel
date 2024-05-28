@@ -4,7 +4,7 @@
 
 #include "../h/MemoryAllocator.h"
 #include "../h/_thread.h"
-#include "../h/Buffer.hpp"
+#include "../h/_buffer.hpp"
 #include "../h/_sem.hpp"
 #include "../h/RiscV.h"
 
@@ -20,13 +20,13 @@ namespace interruptHandlers {
             char status = *(char*)CONSOLE_STATUS;
             while (CONSOLE_RX_STATUS_BIT & status){
                 char ch = *(char*) CONSOLE_RX_DATA;
-                Buffer::inBuffer->putc(ch);
+                _buffer::inBuffer->putc(ch);
                 status = *(char*)CONSOLE_STATUS;
             }
 
             status = *(char*)CONSOLE_STATUS;
-            while (!Buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
-                *(char*) CONSOLE_RX_DATA = Buffer::outBuffer->getc();
+            while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
+                *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
                 status = *(char*)CONSOLE_STATUS;
             }
         }
@@ -39,8 +39,8 @@ namespace interruptHandlers {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
 
         char status = *(char*)CONSOLE_STATUS;
-        while (!Buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
-            *(char*) CONSOLE_RX_DATA = Buffer::outBuffer->getc();
+        while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
+            *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
             status = *(char*)CONSOLE_STATUS;
         }
 
@@ -178,12 +178,12 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::CON_GETC:
-                retVal = (uint64)Buffer::inBuffer->getc();
+                retVal = (uint64)_buffer::inBuffer->getc();
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::CON_PUTC:
-                Buffer::outBuffer->putc((char)a1);
+                _buffer::outBuffer->putc((char)a1);
                 break;
             default:
                 break;

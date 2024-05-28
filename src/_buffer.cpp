@@ -2,18 +2,18 @@
 // Created by os on 5/22/24.
 //
 
-#include "../h/Buffer.hpp"
+#include "../h/_buffer.hpp"
 
 
-Buffer* Buffer::inBuffer = nullptr;
-Buffer* Buffer::outBuffer = nullptr;
+_buffer* _buffer::inBuffer = nullptr;
+_buffer* _buffer::outBuffer = nullptr;
 
-Buffer::Buffer() {
+_buffer::_buffer() {
     sem_open(&this->spaceAvailable, SIZE);
     sem_open(&this->itemAvailable, 0);
 }
 
-char Buffer::getc() {
+char _buffer::getc() {
     itemAvailable->wait();
     char c = array[start];
     start = (start+1) % SIZE;
@@ -21,21 +21,21 @@ char Buffer::getc() {
     return c;
 }
 
-void Buffer::putc(char c){
+void _buffer::putc(char c){
     spaceAvailable->wait();
     array[end] = c;
     end = (end+1) % SIZE;
     itemAvailable->signal();
 }
 
-void *Buffer::operator new(size_t sz) {
+void *_buffer::operator new(size_t sz) {
     return MemoryAllocator::mem_alloc(sz);
 }
 
-void Buffer::operator delete(void *p) {
+void _buffer::operator delete(void *p) {
     MemoryAllocator::mem_free(p);
 }
 
-bool Buffer::isEmpty() {
+bool _buffer::isEmpty() {
     return itemAvailable->value() == 0;
 }

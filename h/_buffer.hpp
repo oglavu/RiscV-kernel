@@ -2,18 +2,18 @@
 // Created by os on 5/22/24.
 //
 
-#ifndef PROJEKAT_BUFFER_HPP
-#define PROJEKAT_BUFFER_HPP
+#ifndef PROJEKAT__BUFFER_HPP
+#define PROJEKAT__BUFFER_HPP
 
 #include "_sem.hpp"
 #include "MemoryAllocator.h"
 
 
-class Buffer {
+class _buffer {
 public:
-    Buffer();
-    static Buffer* inBuffer;
-    static Buffer* outBuffer;
+    _buffer();
+    static _buffer* inBuffer;
+    static _buffer* outBuffer;
 
     char getc();
     void putc(char);
@@ -34,4 +34,4 @@ private:
  };
 
 
-#endif //PROJEKAT_BUFFER_HPP
+#endif //PROJEKAT__BUFFER_HPP
