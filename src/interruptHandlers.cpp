@@ -5,10 +5,36 @@
 #include "../h/MemoryAllocator.hpp"
 #include "../h/_thread.hpp"
 #include "../h/_buffer.hpp"
+#include "../h/_print.hpp"
 #include "../h/_sem.hpp"
 #include "../h/RiscV.hpp"
 
+extern "C" void _halt();
+
 namespace interruptHandlers {
+
+    inline void handleExceptionInterrupt() {
+        const uint64 volatile stval = RiscV::stvalR();
+        printString("stval: ");
+        printInt(stval, 16);
+        printString("\n");
+
+        const uint64 volatile scause = RiscV::scauseR();
+        printString("scause: ");
+        printInt(scause, 16);
+        printString("\n");
+
+        const uint64 volatile sstatus = RiscV::sstatusR();
+        printString("sstatus: ");
+        printInt(sstatus, 16);
+        printString("\n");
+
+        const uint64 volatile sepc = RiscV::sepcR();
+        printString("sepc: ");
+        printInt(sepc, 16);
+        printString("\n");
+        _halt();
+    }
 
     void handleConsoleInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
@@ -90,6 +116,9 @@ namespace interruptHandlers {
         enum causes: uint64 {
             timer = (uint64) 1 << 63 | 0x1,
             hardware = (uint64) 1 << 63 | 0x9,
+            illegalInstr = (uint64) 0x2,
+            illegalAddrW = (uint64) 0x7,
+            illegalAddrR = (uint64) 0x5,
             userCall = (uint64) 0x8,
             sysCall = (uint64) 0x9
         };
@@ -100,6 +129,18 @@ namespace interruptHandlers {
                 return;
             case causes::hardware:
                 handleConsoleInterrupt();
+                return;
+            case causes::illegalInstr:
+                printString("Exception: Illegal instruction\n");
+                handleExceptionInterrupt();
+                return;
+            case causes::illegalAddrR:
+                printString("Exception: Illegal read address\n");
+                handleExceptionInterrupt();
+                return;
+            case causes::illegalAddrW:
+                printString("Exception: Illegal write address\n");
+                handleExceptionInterrupt();
                 return;
             case causes::userCall:
             case causes::sysCall:
