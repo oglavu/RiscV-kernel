@@ -142,3 +142,20 @@ int _sem::tryWait(_sem *handle) {
 
     return ((int)handle->n > 0);
 }
+
+void *_sem::DataPack::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
+}
+
+void _sem::DataPack::operator delete(void *p) {
+    MemoryAllocator::mem_free(p);
+}
+
+
+void *_sem::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
+}
+
+void _sem::operator delete(void *p) {
+    MemoryAllocator::mem_free(p);
+}

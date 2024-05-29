@@ -121,3 +121,19 @@ int _thread::sleepThread(time_t time) {
     return 0;
 
 }
+
+void *_thread::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
+}
+
+void _thread::operator delete(void *p) {
+    MemoryAllocator::mem_free(p);
+}
+
+void *_thread::SleepNode::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
+}
+
+void _thread::SleepNode::operator delete(void *p) {
+    MemoryAllocator::mem_free(p);
+}

@@ -12,6 +12,8 @@ namespace interruptHandlers {
 
     void handleConsoleInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
+        console_handler();
+        return;
         uint64 sepc = RiscV::sepcR();
         uint64 sstatus = RiscV::sstatusR();
         //  console interrupt (supervisor external interrupt)
@@ -37,13 +39,13 @@ namespace interruptHandlers {
 
     void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
-
+/*
         char status = *(char*)CONSOLE_STATUS;
         while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
             *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
             status = *(char*)CONSOLE_STATUS;
         }
-
+*/
 
 
         if (!_thread::runningThread) return;

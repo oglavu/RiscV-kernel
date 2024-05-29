@@ -41,9 +41,9 @@ protected:
     int i=0;
     void periodicActivation () override {
         if (i > 100) return;
-        putc('A');
-        putc(i+'0');
-        putc('\n');
+        __putc('A');
+        __putc(i+'0');
+        __putc('\n');
         i++;
     }
 };
@@ -55,9 +55,9 @@ protected:
     int i = 0;
     void periodicActivation () override {
         if (i > 100) return;
-        putc('B');
-        putc(i+'0');
-        putc('\n');
+        __putc('B');
+        __putc(i+'0');
+        __putc('\n');
         i++;
     }
 };
@@ -69,16 +69,38 @@ protected:
     int i = 0;
     void periodicActivation () override {
         if (i > 100) return;
-        putc('C');
-        putc(i+'0');
-        putc('\n');
+        __putc('C');
+        __putc(i+'0');
+        __putc('\n');
         i++;
     }
 };
 
-void busyWait(void* arg) {
-    while(*(bool*)arg)
-        thread_dispatch();
+
+
+bool userFinished = false;
+void userMain(void*) {
+    __asm__ volatile("csrw sepc, ra");
+    ThreadA* t1 = new ThreadA(2);
+    ThreadB* t2 = new ThreadB(5);
+    ThreadC* t3 = new ThreadC(10);
+
+    t1->start();
+    t2->start();
+    t3->start();
+
+
+    time_sleep(50);
+
+    t1->terminate();
+    t2->terminate();
+    t3->terminate();
+
+    delete t1;
+    delete t2;
+    delete t3;
+
+    userFinished = true;
 }
 
 
@@ -87,7 +109,6 @@ int main() {
 
     RiscV::stvecW((uint64)&RiscV::setStvecTable);
 
-
     _buffer::inBuffer = new _buffer();
     _buffer::outBuffer = new _buffer();
 
@@ -95,35 +116,18 @@ int main() {
 
     printMem(MemoryAllocator::first);
 
-    ThreadA* t1 = new ThreadA(2);
-    ThreadB* t2 = new ThreadB(5);
-    ThreadC* t3 = new ThreadC(10);
-    bool* b = new bool(true);
+    RiscV::userMode = true;
+    _thread* userMainThread;
+    thread_create(&userMainThread, &userMain, nullptr);
 
-    Thread* busyThread = new Thread(&busyWait, b);
+    while(!userFinished) {
+        thread_dispatch();
+    }
 
-    t1->start();
-    t2->start();
-    t3->start();
-    busyThread->start();
-
-    time_sleep(50);
-
-    t1->terminate();
-    t2->terminate();
-    t3->terminate();
 
     time_sleep(20);
-
-    *b = false;
-
     thread_dispatch();
 
-    delete t1;
-    delete t2;
-    delete t3;
-    delete busyThread;
-    delete b;
     delete _buffer::inBuffer;
     delete _buffer::outBuffer;
     delete Scheduler::readyQueue;

@@ -9,6 +9,8 @@
 
 class RiscV {
 public:
+    static bool userMode;
+
     static void popSppSpie();
     static void setStvecTable();
 

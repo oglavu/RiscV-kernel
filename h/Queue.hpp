@@ -5,8 +5,7 @@
 #ifndef PROJEKAT_QUEUE_HPP
 #define PROJEKAT_QUEUE_HPP
 
-#include "syscall_c.h"
-
+#include "MemoryAllocator.hpp"
 
 template<typename T>
 class Queue {
@@ -15,10 +14,8 @@ private:
         Node* next = nullptr;
         T* data = nullptr;
 
-        void* operator new(size_t, Queue<T>*);
+        void* operator new(size_t);
         void operator delete(void*);
-
-        void* operator new(size_t) = delete;
         void* operator new[](size_t) = delete;
         void operator delete[](void*)  = delete;
     };
@@ -36,6 +33,11 @@ public:
     Queue(const Queue<T>&) = delete;
     Queue<T>& operator=(Queue<T>&) = delete;
 
+    void* operator new(size_t);
+    void operator delete(void*);
+    void* operator new[](size_t) = delete;
+    void operator delete[](void*)  = delete;
+
     T* peekFirst() const { return (head) ? head->data : nullptr; }
     T* peekLast() const { return (last) ? last->data : nullptr; }
 
@@ -46,6 +48,8 @@ public:
 
     friend class _sem;
 };
+
+
 
 template<typename T>
 void Queue<T>::remove(void *ptr) {
@@ -65,8 +69,6 @@ Queue<T>::~Queue() {
         cur = cur->next;
         delete old;
     }
-    void* p = (void*) (((uint64) cur / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
-    mem_free(p);
 }
 
 template<typename T>
@@ -78,17 +80,14 @@ T *Queue<T>::pop(Queue<T>* self) {
     self->head = self->head->next;
     if (toPop == self->last) {
         self->last = nullptr;
-        void* p = (void*) (((uint64) toPop / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
-        mem_free(p);
-        self->lastNodeAddr = 0;
-    } else
-        delete toPop;
+    }
+    delete toPop;
     return data;
 }
 
 template<typename T>
 void Queue<T>::push(Queue<T>*self ,T *data) {
-    Node* node = new(self) Node();
+    Node* node = new Node();
     node->data = data;
 
     if (!self->head) {
@@ -102,22 +101,23 @@ void Queue<T>::push(Queue<T>*self ,T *data) {
 }
 
 template<typename T>
-void *Queue<T>::Node::operator new(size_t sz, Queue<T>* p) {
-    if (sz > MEM_BLOCK_SIZE)
-        return mem_alloc(sz);
-
-    if (p->lastNodeAddr % MEM_BLOCK_SIZE == 0) {
-        void* ptr = mem_alloc(MEM_BLOCK_SIZE);
-        p->lastNodeAddr = (uint64) ptr + MEM_BLOCK_SIZE;
-    }
-    p->lastNodeAddr -= (uint64)sizeof(Node);
-    return (void*)p->lastNodeAddr;
+void Queue<T>::Node::operator delete(void* p) {
+    MemoryAllocator::mem_free(p);
 }
 
 template<typename T>
-void Queue<T>::Node::operator delete(void* p) {
-    // page won't be freed if pointer doesn't point to its beginning
-    mem_free(p);
+void *Queue<T>::Node::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
+}
+
+template<typename T>
+void Queue<T>::operator delete(void* p) {
+    MemoryAllocator::mem_free(p);
+}
+
+template<typename T>
+void *Queue<T>::operator new(size_t sz) {
+    return MemoryAllocator::mem_alloc(sz);
 }
 
 

@@ -23,6 +23,12 @@ private:
         SleepNode* next = nullptr;
         time_t timeRel;
         _thread* thread;
+
+
+        void* operator new(size_t sz);
+        void operator delete(void* p);
+        void* operator new[](size_t sz) = delete;
+        void operator delete[](void* p) = delete;
     };
 
     _thread* parentThread;
@@ -58,6 +64,12 @@ public:
     static int exitThread();
     static void dispatch();
     static void yield();
+
+
+    void* operator new(size_t sz);
+    void operator delete(void* p);
+    void* operator new[](size_t sz) = delete;
+    void operator delete[](void* p) = delete;
 
 
     ~_thread() {

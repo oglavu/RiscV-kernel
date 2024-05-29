@@ -21,6 +21,8 @@ public:
 
     void* operator new(size_t sz);
     void operator delete(void* p);
+    void* operator new[](size_t sz) = delete;
+    void operator delete[](void* p) = delete;
 
 private:
 

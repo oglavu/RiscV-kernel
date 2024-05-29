@@ -23,6 +23,11 @@ private:
         _thread* thr;
         time_t timeRel;
         void* nodeAddr;
+
+        void* operator new(size_t sz);
+        void operator delete(void* p);
+        void* operator new[](size_t sz) = delete;
+        void operator delete[](void* p) = delete;
     };
     void removeBlocked();
 
@@ -50,6 +55,11 @@ public:
         close();
         delete blocked;
     }
+
+    void* operator new(size_t sz);
+    void operator delete(void* p);
+    void* operator new[](size_t sz) = delete;
+    void operator delete[](void* p) = delete;
 
     friend class _thread;
 
