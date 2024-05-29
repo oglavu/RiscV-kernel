@@ -31,9 +31,9 @@ int mem_free(void* ptr){
 int thread_create(thread_t* handle,
                   void(*start_routine) (void*),
                   void* arg ) {
-    uint8* stack = nullptr; // uint64 !!!!!!!!!!!!!!!!!!!!!!
+    uint64* stack = nullptr;
     if (start_routine) {
-        stack = (uint8*)mem_alloc(sizeof(uint8)*DEFAULT_STACK_SIZE); // uint64 !!!!!!!!!!!!!!!!!!!!!! x2
+        stack = (uint64*)mem_alloc(sizeof(uint64)*DEFAULT_STACK_SIZE);
         if (!stack) return -1;
     }
     RiscV::a4W((uint64)stack);

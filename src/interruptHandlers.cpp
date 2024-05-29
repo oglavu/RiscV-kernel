@@ -15,31 +15,29 @@ namespace interruptHandlers {
 
     inline void handleExceptionInterrupt() {
         const uint64 volatile stval = RiscV::stvalR();
-        printString("stval: ");
-        printInt(stval, 16);
-        printString("\n");
+        KprintString("stval: ");
+        KprintInt(stval, 16);
+        KprintString("\n");
 
         const uint64 volatile scause = RiscV::scauseR();
-        printString("scause: ");
-        printInt(scause, 16);
-        printString("\n");
+        KprintString("scause: ");
+        KprintInt(scause, 16);
+        KprintString("\n");
 
         const uint64 volatile sstatus = RiscV::sstatusR();
-        printString("sstatus: ");
-        printInt(sstatus, 16);
-        printString("\n");
+        KprintString("sstatus: ");
+        KprintInt(sstatus, 16);
+        KprintString("\n");
 
         const uint64 volatile sepc = RiscV::sepcR();
-        printString("sepc: ");
-        printInt(sepc, 16);
-        printString("\n");
+        KprintString("sepc: ");
+        KprintInt(sepc, 16);
+        KprintString("\n");
         _halt();
     }
 
     void handleConsoleInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
-        console_handler();
-        return;
         uint64 sepc = RiscV::sepcR();
         uint64 sstatus = RiscV::sstatusR();
         //  console interrupt (supervisor external interrupt)
@@ -63,15 +61,16 @@ namespace interruptHandlers {
         RiscV::sepcW(sepc);
     }
 
-    void handleTimerInterrupt() {
+    inline void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
-/*
+
+
         char status = *(char*)CONSOLE_STATUS;
         while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
             *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
             status = *(char*)CONSOLE_STATUS;
         }
-*/
+
 
 
         if (!_thread::runningThread) return;
@@ -87,14 +86,13 @@ namespace interruptHandlers {
             _thread::sleepTimeFirst = (_thread::sleepList) ? _thread::sleepList->timeRel : 0;
             if (_thread::sleepList) _thread::sleepList->timeRel = 0;
         }
-        return;
         uint64 n = ++_thread::curPeriod;
         if (n >= _thread::runningThread->getPeriods()) {
             uint64 volatile sepc = RiscV::sepcR();
             uint64 volatile sstatus = RiscV::sstatusR();
 
             _thread::curPeriod = 0;
-            _thread::yield();
+            _thread::dispatch();
 
             RiscV::sepcW(sepc);
             RiscV::sstatusW(sstatus);
@@ -131,23 +129,26 @@ namespace interruptHandlers {
                 handleConsoleInterrupt();
                 return;
             case causes::illegalInstr:
-                printString("Exception: Illegal instruction\n");
+                KprintString("Exception: Illegal instruction\n");
                 handleExceptionInterrupt();
                 return;
             case causes::illegalAddrR:
-                printString("Exception: Illegal read address\n");
+                KprintString("Exception: Illegal read address\n");
                 handleExceptionInterrupt();
                 return;
             case causes::illegalAddrW:
-                printString("Exception: Illegal write address\n");
+                KprintString("Exception: Illegal write address\n");
                 handleExceptionInterrupt();
                 return;
             case causes::userCall:
             case causes::sysCall:
                 // further processing below
-            default:
-                // error
                 break;
+            default:
+                // unknown interrupt
+                KprintString("Exception: Unknown interrupt source\n");
+                handleExceptionInterrupt();
+                return;
         }
 
         // interrupt from UserMode(0x08) or KernelMode(0x09)
@@ -172,7 +173,7 @@ namespace interruptHandlers {
                 retVal = _thread::createThread((_thread**) a1,
                                                (void(*)(void*))a2,
                                                (void*)a3,
-                                               (uint8*)a4);// uint64 !!!!!!!!!!!!!!!!!!!!!!
+                                               (uint64*)a4);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;

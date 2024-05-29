@@ -10,7 +10,7 @@ _thread::SleepNode* _thread::sleepList = nullptr;
 time_t _thread::sleepTimeFirst = 0;
 uint64 _thread::curPeriod = 0;
 
-_thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+_thread::_thread(_thread::ThreadBody bodyy, void *arg, uint64* allocStack):
                     body(bodyy), bodyArguement(arg) {
     if (!_thread::mainThread)
         _thread::init();
@@ -18,7 +18,7 @@ _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint8* allocStack): // UI
     stackStartAddr = (uint64)allocStack;
     parentThread = _thread::runningThread;
     // Not subtracting one bcs stack should point to last TAKEN address
-    context.sp = stackStartAddr + sizeof(uint8)*DEFAULT_STACK_SIZE; // UINT64 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    context.sp = stackStartAddr + sizeof(uint64)*DEFAULT_STACK_SIZE;
     context.ra = (uint64) &_thread::wrap;
     state = ThreadState::Ready;
     if (body) Scheduler::put(this);
@@ -73,7 +73,7 @@ void _thread::complete() {
 }
 
 // stack is allocated in ABI
-int _thread::createThread(_thread **handle, _thread::ThreadBody bodyy, void *arg, uint8* allocStackParam) { // uint64 !!!!!!!!
+int _thread::createThread(_thread **handle, _thread::ThreadBody bodyy, void *arg, uint64* allocStackParam) {
     _thread* t = new _thread(bodyy, arg, allocStackParam);
     if (!t || !allocStackParam) return -1;
     *handle = t;
