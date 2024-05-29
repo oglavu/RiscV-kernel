@@ -86,16 +86,13 @@ namespace interruptHandlers {
             _thread::sleepTimeFirst = (_thread::sleepList) ? _thread::sleepList->timeRel : 0;
             if (_thread::sleepList) _thread::sleepList->timeRel = 0;
         }
+
+
+
         uint64 n = ++_thread::curPeriod;
         if (n >= _thread::runningThread->getPeriods()) {
-            uint64 volatile sepc = RiscV::sepcR();
-            uint64 volatile sstatus = RiscV::sstatusR();
-
             _thread::curPeriod = 0;
             _thread::dispatch();
-
-            RiscV::sepcW(sepc);
-            RiscV::sstatusW(sstatus);
         }
     }
 
@@ -108,9 +105,7 @@ namespace interruptHandlers {
         uint64 volatile a4 = RiscV::a4R();
 
 
-        uint64 volatile scause = RiscV::scauseR();
-
-        // causes
+        // processable scauses
         enum causes: uint64 {
             timer = (uint64) 1 << 63 | 0x1,
             hardware = (uint64) 1 << 63 | 0x9,
@@ -121,13 +116,9 @@ namespace interruptHandlers {
             sysCall = (uint64) 0x9
         };
 
+        uint64 volatile scause = RiscV::scauseR();
+
         switch(scause) {
-            case causes::timer:
-                handleTimerInterrupt();
-                return;
-            case causes::hardware:
-                handleConsoleInterrupt();
-                return;
             case causes::illegalInstr:
                 KprintString("Exception: Illegal instruction\n");
                 handleExceptionInterrupt();
@@ -139,6 +130,26 @@ namespace interruptHandlers {
             case causes::illegalAddrW:
                 KprintString("Exception: Illegal write address\n");
                 handleExceptionInterrupt();
+                return;
+
+            case causes::timer:
+                uint64 volatile sepc, sstatus;
+                sepc = RiscV::sepcR();
+                sstatus = RiscV::sstatusR();
+
+                handleTimerInterrupt();
+
+                RiscV::sstatusW(sstatus);
+                RiscV::sepcW(sepc);
+                return;
+            case causes::hardware:
+                sepc = RiscV::sepcR();
+                sstatus = RiscV::sstatusR();
+
+                handleConsoleInterrupt();
+
+                RiscV::sepcW(sepc);
+                RiscV::sstatusW(sstatus);
                 return;
             case causes::userCall:
             case causes::sysCall:
