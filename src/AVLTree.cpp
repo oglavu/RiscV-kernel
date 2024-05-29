@@ -264,7 +264,8 @@ AVLTree *AVLTree::removeLL(AVLTree *toRem, AVLTree *root) {
     }
     AVLTree* prevNode = toRem->prev;
     AVLTree* nextNode = toRem->next;
-    prevNode->next = nextNode;
+    if (prevNode)
+        prevNode->next = nextNode;
     if (nextNode)
         nextNode->prev = prevNode;
 
