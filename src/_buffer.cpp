@@ -9,8 +9,8 @@ _buffer* _buffer::inBuffer = nullptr;
 _buffer* _buffer::outBuffer = nullptr;
 
 _buffer::_buffer() {
-    sem_open(&this->spaceAvailable, SIZE);
-    sem_open(&this->itemAvailable, 0);
+    _sem::createSemaphore(&this->spaceAvailable, SIZE);
+    _sem::createSemaphore(&this->itemAvailable, 0);
 }
 
 char _buffer::getc() {
@@ -38,4 +38,9 @@ void _buffer::operator delete(void *p) {
 
 bool _buffer::isEmpty() {
     return itemAvailable->value() == 0;
+}
+
+_buffer::~_buffer() {
+    _sem::closeSemaphore(this->spaceAvailable);
+    _sem::closeSemaphore(this->itemAvailable);
 }

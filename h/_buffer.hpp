@@ -19,6 +19,8 @@ public:
     void putc(char);
     bool isEmpty();
 
+    ~_buffer();
+
     void* operator new(size_t sz);
     void operator delete(void* p);
     void* operator new[](size_t sz) = delete;
