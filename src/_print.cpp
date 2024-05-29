@@ -5,7 +5,7 @@
 #include "../h/_print.hpp"
 
 
-void printString(char const *string) {
+void KprintString(char const *string) {
 
     while (*string != '\0') {
         __putc(*string);
@@ -15,7 +15,7 @@ void printString(char const *string) {
 }
 
 
-void printInt(int num, int base, int sgn) {
+void KprintInt(int num, int base, int sgn) {
     char buf[16];
     bool isNeg = false;
     unsigned numAbs;
