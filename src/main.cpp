@@ -51,15 +51,22 @@ int main() {
     _buffer::outBuffer = new _buffer();
 
     RiscV::ms_sstatus(RiscV::BitMaskSStatus::SSTATUS_SIE);
+    _thread* userMainThread, *outputThread;
+    bool outputThreadStatus = true;
+    thread_create(&outputThread, &_thread::outputThreadBody, &outputThreadStatus);
+    thread_dispatch();
 
     RiscV::userMode = true;
-    _thread* userMainThread;
     thread_create(&userMainThread, &userMainWrapper, nullptr);
 
     while(!userFinished) {
         thread_dispatch();
     }
 
+    outputThreadStatus = false;
+    thread_dispatch();
+
+    delete outputThread;
 
     return 0;
 }

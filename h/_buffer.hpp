@@ -21,6 +21,9 @@ public:
 
     ~_buffer();
 
+    static void outBufferFlush();
+    static void inBufferFill();
+
     void* operator new(size_t sz);
     void operator delete(void* p);
     void* operator new[](size_t sz) = delete;

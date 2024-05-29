@@ -7,6 +7,7 @@
 
 #include "RiscV.hpp"
 #include "Scheduler.hpp"
+#include "_buffer.hpp"
 #include "_sem.hpp"
 
 class _thread {
@@ -63,6 +64,8 @@ public:
     static int exitThread();
     static void dispatch();
     static void yield();
+
+    static void outputThreadBody(void* status);
 
 
     void* operator new(size_t sz);

@@ -137,3 +137,10 @@ void *_thread::SleepNode::operator new(size_t sz) {
 void _thread::SleepNode::operator delete(void *p) {
     MemoryAllocator::mem_free(p);
 }
+
+void _thread::outputThreadBody(void *status) {
+    while(*(bool*)status) {
+        _buffer::outBufferFlush();
+        _thread::yield();
+    }
+}

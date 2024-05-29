@@ -44,3 +44,20 @@ _buffer::~_buffer() {
     _sem::closeSemaphore(this->spaceAvailable);
     _sem::closeSemaphore(this->itemAvailable);
 }
+
+void _buffer::outBufferFlush() {
+    char status = *(char*)CONSOLE_STATUS;
+    while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
+        *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
+        status = *(char*)CONSOLE_STATUS;
+    }
+}
+
+void _buffer::inBufferFill() {
+    char status = *(char*)CONSOLE_STATUS;
+    while (CONSOLE_RX_STATUS_BIT & status){
+        char ch = *(char*) CONSOLE_RX_DATA;
+        _buffer::inBuffer->putc(ch);
+        status = *(char*)CONSOLE_STATUS;
+    }
+}

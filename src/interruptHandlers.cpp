@@ -33,6 +33,9 @@ namespace interruptHandlers {
         KprintString("sepc: ");
         KprintInt(sepc, 16);
         KprintString("\n");
+
+        // flushing all accumulated data to console
+        _buffer::outBufferFlush();
         _halt();
     }
 
@@ -43,18 +46,8 @@ namespace interruptHandlers {
         //  console interrupt (supervisor external interrupt)
         if (plic_claim() == RiscV::HardwareEntries::IRQ_CONS){
 
-            char status = *(char*)CONSOLE_STATUS;
-            while (CONSOLE_RX_STATUS_BIT & status){
-                char ch = *(char*) CONSOLE_RX_DATA;
-                _buffer::inBuffer->putc(ch);
-                status = *(char*)CONSOLE_STATUS;
-            }
+            _buffer::inBufferFill();
 
-            status = *(char*)CONSOLE_STATUS;
-            while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
-                *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
-                status = *(char*)CONSOLE_STATUS;
-            }
         }
         plic_complete(CONSOLE_IRQ);
         RiscV::sstatusW(sstatus);
@@ -64,14 +57,7 @@ namespace interruptHandlers {
     inline void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
 
-
-        char status = *(char*)CONSOLE_STATUS;
-        while (!_buffer::outBuffer->isEmpty() && CONSOLE_TX_STATUS_BIT & status){
-            *(char*) CONSOLE_RX_DATA = _buffer::outBuffer->getc();
-            status = *(char*)CONSOLE_STATUS;
-        }
-
-
+        _buffer::outBufferFlush();
 
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;

@@ -8,7 +8,7 @@
 void KprintString(char const *string) {
 
     while (*string != '\0') {
-        __putc(*string);
+        putc(*string);
         string++;
     }
 
@@ -36,5 +36,5 @@ void KprintInt(int num, int base, int sgn) {
         buf[i++] = '-';
 
     while (--i >= 0)
-        __putc(buf[i]);
+        putc(buf[i]);
 }
