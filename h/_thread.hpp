@@ -5,9 +5,9 @@
 #ifndef PROJEKAT__THREAD_HPP
 #define PROJEKAT__THREAD_HPP
 
+#include "RiscV.hpp"
 #include "Scheduler.hpp"
 #include "_sem.hpp"
-#include "syscall_cpp.hpp"
 
 class _thread {
 private:
@@ -23,7 +23,6 @@ private:
         SleepNode* next = nullptr;
         time_t timeRel;
         _thread* thread;
-
 
         void* operator new(size_t sz);
         void operator delete(void* p);

@@ -6,7 +6,6 @@
 #define PROJEKAT_SCHEDULER_HPP
 
 #include "Queue.hpp"
-#include "syscall_cpp.hpp"
 
 class _thread;
 
