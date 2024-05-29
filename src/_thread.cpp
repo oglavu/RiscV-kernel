@@ -113,7 +113,7 @@ int _thread::sleepThread(time_t time) {
         sn->timeRel = time;
         sn->next = cur->next;
         cur->next = sn;
-        sn->next->timeRel -= time;
+        if (sn->next) sn->next->timeRel -= time;
     }
 
     _thread::runningThread->suspend();
