@@ -6,7 +6,8 @@
 
 
 void* mem_alloc(size_t size) {
-    RiscV::a1W(size);
+    // convert bytes to blocks
+    RiscV::a1W((size + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
     RiscV::a0W(RiscV::CodeOps::MEM_ALOC);
 
     __asm__ volatile ("ecall");

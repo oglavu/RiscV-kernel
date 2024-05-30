@@ -22,12 +22,14 @@ private:
 
     static void init();
 public:
+    // in bytes
     static uint64 startAddr;
     static uint64 endAddr;
+    // in blocks
     static const uint64 HEADER_SIZE;
-    //static AVLTree* free;
     static DataBlock* first;
 
+    MemoryAllocator() = delete;
     MemoryAllocator(const MemoryAllocator &obj) = delete;
     MemoryAllocator operator=(MemoryAllocator& obj) = delete;
 

@@ -7,34 +7,9 @@
 DataBlock* MemoryAllocator::first = nullptr;
 uint64 MemoryAllocator::startAddr = 0;
 uint64 MemoryAllocator::endAddr = 0;
-const uint64 MemoryAllocator::HEADER_SIZE = (uint64)
-        ((sizeof(DataBlock) + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE;
+const uint64 MemoryAllocator::HEADER_SIZE =
+                (uint64) (sizeof(DataBlock) + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE;
 bool MemoryAllocator::initialised = false;
-/*
-int getSSSum(AVLTree* root) {
-    if (!root) return 0;
-    return 1+getSSSum(root->sameSizeNext);
-}
-
-
-int getSum(AVLTree* root) {
-    if (!root) return 0;
-    return 1+ getSum(root->left) + getSum(root->right) + getSSSum(root->sameSizeNext);
-}
-
-
-bool checkSameAmount() {
-    int LL = 0;
-    AVLTree* cur = MemoryAllocator::first;
-    while(cur) {
-        LL++; cur = cur->next;
-    }
-
-    int BT = getSum(MemoryAllocator::free);
-
-    return (BT==LL);
-}
-*/
 
 void MemoryAllocator::init() {
     if (MemoryAllocator::initialised) return;
@@ -44,18 +19,15 @@ void MemoryAllocator::init() {
 
     MemoryAllocator::first = (DataBlock*) MemoryAllocator::startAddr;
     MemoryAllocator::first->sz =
-            (size_t) (MemoryAllocator::endAddr - MemoryAllocator::startAddr - MemoryAllocator::HEADER_SIZE);
+            (size_t) (MemoryAllocator::endAddr - MemoryAllocator::startAddr - MemoryAllocator::HEADER_SIZE * MEM_BLOCK_SIZE);
 
     MemoryAllocator::initialised = true;
 }
 
-void* MemoryAllocator::mem_alloc(size_t size) {
-    if (size <= 0) return nullptr;
+void* MemoryAllocator::mem_alloc(size_t n) {
+    if (n == 0) return nullptr;
     if (!MemoryAllocator::initialised)
         MemoryAllocator::init();
-
-    size = ((size + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE;
-
 
     // finding best-fit
     DataBlock* prevFreeSeg = nullptr;
@@ -63,11 +35,12 @@ void* MemoryAllocator::mem_alloc(size_t size) {
     DataBlock* prevIter = nullptr;
     DataBlock* iter = MemoryAllocator::first;
     while(iter) {
-        if (iter->sz == size) { prevFreeSeg = prevIter; freeSeg = iter; break; }
-        if (iter->sz > size) { prevFreeSeg = prevIter; freeSeg = iter; }
+        if (iter->sz == n) { prevFreeSeg = prevIter; freeSeg = iter; break; }
+        if (iter->sz > n) { prevFreeSeg = prevIter; freeSeg = iter; }
         prevIter = iter;
         iter = iter->next;
     }
+    // no suitable segment
     if (!freeSeg) return nullptr;
 
     // remove freeSeg from list
@@ -77,11 +50,11 @@ void* MemoryAllocator::mem_alloc(size_t size) {
         MemoryAllocator::first = MemoryAllocator::first->next;
     }
 
-    if (size + MEM_BLOCK_SIZE + HEADER_SIZE <= freeSeg->sz
-                && size + MEM_BLOCK_SIZE + HEADER_SIZE >= size) { //overflow check
-        DataBlock* newFreeSeg = (DataBlock*) ((uint64)freeSeg + size + HEADER_SIZE);
-        newFreeSeg->sz = freeSeg->sz - size - HEADER_SIZE;
-        freeSeg->sz = size;
+    if (n + HEADER_SIZE + 1 <= freeSeg->sz) {
+        // spliting found best-fit
+        DataBlock* newFreeSeg = (DataBlock*) ((uint64)freeSeg + (n + HEADER_SIZE) * MEM_BLOCK_SIZE);
+        newFreeSeg->sz = freeSeg->sz - n - HEADER_SIZE;
+        freeSeg->sz = n;
 
         // insert remaining part of freeBlock
         if (prevFreeSeg) {
@@ -94,20 +67,20 @@ void* MemoryAllocator::mem_alloc(size_t size) {
     }
 
     freeSeg->next = 0;
-    return (void*) ((uint64)freeSeg + HEADER_SIZE);
+    return (void*) ((uint64)freeSeg + HEADER_SIZE * MEM_BLOCK_SIZE);
 }
 
 
 
 int MemoryAllocator::mem_free(void *ptr) {
 
-    if (!ptr) return -1;
+    if (!ptr) return -1; // nullptr
     if ((uint64)ptr % MEM_BLOCK_SIZE != 0 ) return -2; // ptr doesn't point to beginning of block (faulty ptr)
     if ((uint64)ptr >= MemoryAllocator::endAddr || (uint64) ptr < MemoryAllocator::startAddr) return -3; //ptr out of bound
 
-    DataBlock* toFree = (DataBlock*) ((uint64)ptr - HEADER_SIZE); toFree->next = nullptr;
-    DataBlock* aft = ((uint64)toFree + toFree->sz + HEADER_SIZE >= MemoryAllocator::endAddr) ? nullptr :
-            (DataBlock*) ((uint64)toFree + toFree->sz + HEADER_SIZE);
+    DataBlock* toFree = (DataBlock*) ((uint64)ptr - HEADER_SIZE * MEM_BLOCK_SIZE); toFree->next = nullptr;
+    DataBlock* aft = ((uint64)toFree + (toFree->sz + HEADER_SIZE) * MEM_BLOCK_SIZE >= MemoryAllocator::endAddr) ? nullptr :
+            (DataBlock*) ((uint64)toFree + (toFree->sz + HEADER_SIZE) * MEM_BLOCK_SIZE);
 
     // whole memory used
     if (MemoryAllocator::first == nullptr) {
@@ -125,9 +98,10 @@ int MemoryAllocator::mem_free(void *ptr) {
     }
 
     if (iter && (uint64)iter == (uint64)toFree) return -5; // mem already freed
-    if (iter && (uint64)toFree + toFree->sz + HEADER_SIZE > (uint64)iter) return -4; // mem block overlaps another
-    if (prevIter && (uint64)prevIter + prevIter->sz + HEADER_SIZE > (uint64)toFree) return -6; // mem block already contained in free mem
+    if (iter && (uint64)toFree + (toFree->sz + HEADER_SIZE) * MEM_BLOCK_SIZE > (uint64)iter) return -4; // mem block overlaps another
+    if (prevIter && (uint64)prevIter + (prevIter->sz + HEADER_SIZE) * MEM_BLOCK_SIZE > (uint64)toFree) return -6; // mem block already contained in free mem
 
+    // insert toFree
     toFree->next = iter;
     ((prevIter) ? prevIter->next : MemoryAllocator::first) = toFree;
 
@@ -138,7 +112,7 @@ int MemoryAllocator::mem_free(void *ptr) {
         ((prevIter) ? prevIter->next : MemoryAllocator::first) = toFree;
     }
 
-    if (prevIter && (uint64)prevIter + prevIter->sz + HEADER_SIZE == (uint64)toFree) {
+    if (prevIter && (uint64)prevIter + (prevIter->sz + HEADER_SIZE) * MEM_BLOCK_SIZE == (uint64)toFree) {
         // block before toFree is free as well. merge them
         prevIter->sz += toFree->sz + HEADER_SIZE;
         prevIter->next = toFree->next;
