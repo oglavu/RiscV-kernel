@@ -8,84 +8,15 @@
 #include "../h/_buffer.hpp"
 #include "../h/_print.hpp"
 
-//extern void userMain();
-
-class ThreadA: public PeriodicThread {
-    int i=0;
-public:
-    explicit ThreadA(time_t t): PeriodicThread(t) {}
-    void periodicActivation() override {
-        putc('A');
-        KprintInt(i++);
-        putc('\n');
-    }
-};
-
-class ThreadB: public PeriodicThread {
-    int i=0;
-public:
-    explicit ThreadB(time_t t): PeriodicThread(t) {}
-    void periodicActivation() override {
-        putc('B');
-        KprintInt(i++);
-        putc('\n');
-    }
-};
-
-class ThreadC: public PeriodicThread {
-    int i=0;
-public:
-    explicit ThreadC(time_t t): PeriodicThread(t) {}
-    void periodicActivation() override {
-        putc('C');
-        KprintInt(i++);
-        putc('\n');
-    }
-};
-
-
-void userMainS() {
-
-    ThreadA* tA = new ThreadA(2);
-    ThreadB* tB = new ThreadB(5);
-    ThreadC* tC = new ThreadC(10);
-
-    tA->start();
-    tB->start();
-    tC->start();
-
-    time_sleep(100);
-
-    KprintString("Terminating periodic threads...\n");
-
-    tA->terminate();
-    tB->terminate();
-    tC->terminate();
-
-    KprintString("Terminated periodic threads...\n");
-
-    time_sleep(20);
-
-    KprintString("Freeing Memory...\n");
-
-    delete tA;
-    delete tB;
-    delete tC;
-
-    KprintString("Memory freed\n");
-
-
-}
-
-
+extern void userMain();
 
 void userMainWrapper(void* userSemaphore) {
-    userMainS();
+    userMain();
     ((_sem*)userSemaphore)->signal();
 }
 
-void printMem(AVLTree* root) {
-    AVLTree* cur = root;
+void printMem(DataBlock* root) {
+    DataBlock* cur = root;
     static const uint64 N = 256;
     static const uint64 R = 4;
     for (uint64 i=0; i<N; i++) {
@@ -132,14 +63,17 @@ int main() {
     thread_dispatch();
     userSemaphore->wait();
 
-
-    KprintString("userMain finished\n");
-
     // cleaning
-    thread_dispatch(); // to empty outBuffer
+    // freeing userSemaphore
     sem_close(userSemaphore);
+    // to empty outBuffer
+    while(!_buffer::outBuffer->isEmpty()) {
+        thread_dispatch();
+    }
+    // to close outBufferThread
     outputThreadStatus = false;
-    thread_dispatch(); // to close outBufferThread
+    while(!outputThread->isTerminated())
+        thread_dispatch();
 
     delete outputThread;
     delete userSemaphore;
@@ -148,8 +82,6 @@ int main() {
     while (_thread::sleepList)
         _thread::sleepList = _thread::sleepList->next;
     _thread::sleepTimeFirst = 0;
-
-    KprintString("SleepList Freed");
 
     // clearing _sem::timed
     while(_sem::timed)

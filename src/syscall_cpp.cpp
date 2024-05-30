@@ -30,13 +30,7 @@ void operator delete[](void *p) noexcept {
 Thread::Thread(void (*body)(void *), void *arg):
     body(body), arg(arg) { }
 
-Thread::~Thread() {
-
-    uint64 stackOffset = 48; // #HARDCODED
-    void* p = (void*) *(uint64*) ((uint64)myHandle + stackOffset);
-    mem_free(p);
-    mem_free(myHandle);
-}
+Thread::~Thread() { }
 
 int Thread::start() {
     using ThreadBody = void(*)(void*);
