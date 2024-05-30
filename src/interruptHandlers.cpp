@@ -57,8 +57,6 @@ namespace interruptHandlers {
     inline void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
 
-        _buffer::outBufferFlush();
-
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 

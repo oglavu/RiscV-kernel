@@ -96,7 +96,7 @@ int _thread::sleepThread(time_t time) {
 
     SleepNode* sn = new SleepNode;
     sn->thread = _thread::runningThread;
-    if (!_thread::sleepList || _thread::sleepTimeFirst > time) {
+    if (!_thread::sleepList || _thread::sleepTimeFirst >= time) {
         sn->next = _thread::sleepList;
         if (_thread::sleepList)
             _thread::sleepList->timeRel = _thread::sleepTimeFirst - time;

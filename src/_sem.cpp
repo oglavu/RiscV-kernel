@@ -70,6 +70,8 @@ int _sem::close() {
     if (closed)
         return -1;
 
+    closed = true;
+
     while(blocked->peekFirst()) {
         _thread* cur = Queue<_thread>::pop(blocked);
         cur->unsuspend();

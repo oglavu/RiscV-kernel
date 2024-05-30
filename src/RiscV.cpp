@@ -3,7 +3,7 @@
 //
 
 #include "../h/RiscV.hpp"
-#include "../lib/console.h"
+
 bool RiscV::userMode = false;
 
 void RiscV::popSppSpie() {

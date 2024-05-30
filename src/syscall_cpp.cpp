@@ -70,28 +70,30 @@ PeriodicThread::PeriodicThread(time_t period) :
 void PeriodicThread::run() {
     _node* node, *prev = nullptr;
     while(true) {
-        time_sleep(this->period);
-        for (node = pendingTermination; node;
-            prev = node, node= node->next) {
-            if (node->handle == getHandle()) break;
+        time_sleep(period);
+        // check if current node's termination is pending
+        node = pendingTermination;
+        while(node && node->handle != getHandle()) {
+            prev = node; node = node->next;
         }
-        if(node)
-            break;
-        prev = nullptr;
+        if (node) break;
+
+        // do periodic action
         this->periodicActivation();
     }
+
+    // remove cur thr from pending
     if (node == pendingTermination) {
         pendingTermination = pendingTermination->next;
-        delete node;
     } else if (node->next) {
         node->handle = node->next->handle;
         _node* nxt = node->next;
         node->next = node->next->next;
-        delete nxt;
+        node = nxt;
     } else {
-        prev->next = node->next;
-        delete node;
+        prev->next = nullptr;
     }
+    delete node;
 }
 
 void PeriodicThread::terminate() {

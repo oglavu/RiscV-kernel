@@ -2,19 +2,86 @@
 // Created by os on 5/1/24.
 //
 
-#include "../lib/console.h"
 #include "../h/syscall_c.h"
 #include "../h/MemoryAllocator.hpp"
 #include "../h/syscall_cpp.hpp"
 #include "../h/_buffer.hpp"
 #include "../h/_print.hpp"
 
-extern void userMain();
+//extern void userMain();
 
-static bool userFinished = false;
-void userMainWrapper(void*) {
-    userMain();
-    userFinished = true;
+class ThreadA: public PeriodicThread {
+    int i=0;
+public:
+    explicit ThreadA(time_t t): PeriodicThread(t) {}
+    void periodicActivation() override {
+        putc('A');
+        KprintInt(i++);
+        putc('\n');
+    }
+};
+
+class ThreadB: public PeriodicThread {
+    int i=0;
+public:
+    explicit ThreadB(time_t t): PeriodicThread(t) {}
+    void periodicActivation() override {
+        putc('B');
+        KprintInt(i++);
+        putc('\n');
+    }
+};
+
+class ThreadC: public PeriodicThread {
+    int i=0;
+public:
+    explicit ThreadC(time_t t): PeriodicThread(t) {}
+    void periodicActivation() override {
+        putc('C');
+        KprintInt(i++);
+        putc('\n');
+    }
+};
+
+
+void userMainS() {
+
+    ThreadA* tA = new ThreadA(2);
+    ThreadB* tB = new ThreadB(5);
+    ThreadC* tC = new ThreadC(10);
+
+    tA->start();
+    tB->start();
+    tC->start();
+
+    time_sleep(100);
+
+    KprintString("Terminating periodic threads...\n");
+
+    tA->terminate();
+    tB->terminate();
+    tC->terminate();
+
+    KprintString("Terminated periodic threads...\n");
+
+    time_sleep(20);
+
+    KprintString("Freeing Memory...\n");
+
+    delete tA;
+    delete tB;
+    delete tC;
+
+    KprintString("Memory freed\n");
+
+
+}
+
+
+
+void userMainWrapper(void* userSemaphore) {
+    userMainS();
+    ((_sem*)userSemaphore)->signal();
 }
 
 void printMem(AVLTree* root) {
@@ -57,16 +124,41 @@ int main() {
     thread_dispatch();
 
     RiscV::userMode = true;
-    thread_create(&userMainThread, &userMainWrapper, nullptr);
+    _sem* userSemaphore;
+    sem_open(&userSemaphore, 0);
+    thread_create(&userMainThread, &userMainWrapper, userSemaphore);
 
-    while(!userFinished) {
-        thread_dispatch();
-    }
-
-    outputThreadStatus = false;
+    // starting user
     thread_dispatch();
+    userSemaphore->wait();
+
+
+    KprintString("userMain finished\n");
+
+    // cleaning
+    thread_dispatch(); // to empty outBuffer
+    sem_close(userSemaphore);
+    outputThreadStatus = false;
+    thread_dispatch(); // to close outBufferThread
 
     delete outputThread;
+    delete userSemaphore;
+
+    // clearing sleeping threads
+    while (_thread::sleepList)
+        _thread::sleepList = _thread::sleepList->next;
+    _thread::sleepTimeFirst = 0;
+
+    KprintString("SleepList Freed");
+
+    // clearing _sem::timed
+    while(_sem::timed)
+        _sem::timed = _sem::timed->next;
+    _sem::timeAbs = 0;
+
+    // emptying scheduler
+    while(Scheduler::get());
+
 
     return 0;
 }
