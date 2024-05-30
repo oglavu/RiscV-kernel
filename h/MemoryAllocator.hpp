@@ -6,7 +6,11 @@
 #define PROJEKAT_MEMORYALLOCATOR_HPP
 
 #include "../lib/hw.h"
-#include "AVLTree.hpp"
+
+struct DataBlock {
+    DataBlock* next;
+    size_t sz;
+};
 
 class MemoryAllocator {
 private:
@@ -21,8 +25,8 @@ public:
     static uint64 startAddr;
     static uint64 endAddr;
     static const uint64 HEADER_SIZE;
-    static AVLTree* free;
-    static AVLTree* first;
+    //static AVLTree* free;
+    static DataBlock* first;
 
     MemoryAllocator(const MemoryAllocator &obj) = delete;
     MemoryAllocator operator=(MemoryAllocator& obj) = delete;
