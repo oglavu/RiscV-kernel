@@ -9,13 +9,13 @@ Queue<_thread>* Scheduler::readyQueue = nullptr;
 
 _thread *Scheduler::get() {
     return (Scheduler::initialised) ?
-        Queue<_thread>::pop(Scheduler::readyQueue) : nullptr;
+        readyQueue->pop() : nullptr;
 }
 
 void Scheduler::put(_thread * data) {
     if (!Scheduler::initialised)
         Scheduler::init();
-    Queue<_thread>::push(Scheduler::readyQueue, data);
+    readyQueue->push(data);
 }
 
 void Scheduler::init() {

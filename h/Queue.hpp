@@ -41,8 +41,8 @@ public:
 
     T* peekFirst() const { return (T*)head; }
 
-    static void push(Queue<T>* self, T* data);
-    static T* pop(Queue<T>* self);
+    void push(T* data);
+    T* pop();
 
     ~Queue();
 
@@ -53,7 +53,7 @@ public:
 
 template<typename T>
 void Queue<T>::remove(void *ptr) {
-    T* swapData = Queue<T>::pop(this);
+    T* swapData = this->pop();
     if (head) *(T**)ptr = swapData;
 
 }
@@ -73,56 +73,56 @@ Queue<T>::~Queue() {
 }
 
 template<typename T>
-T *Queue<T>::pop(Queue<T>* self) {
-    if (!self->head) return nullptr;
+T *Queue<T>::pop() {
+    if (!head) return nullptr;
     // taking data from head
-    T* data = *self->head;
-    self->head = (T**) ((uint64)self->head + sizeof(T*));
+    T* data = *head;
+    head = (T**) ((uint64)head + sizeof(T*));
 
-    if (((uint64)self->head + sizeof(QueueNode*)) % MEM_BLOCK_SIZE == 0) {
-        QueueNode* emptyBlock = (QueueNode*) (((uint64)self->head / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE );
+    if (((uint64)head + sizeof(QueueNode*)) % MEM_BLOCK_SIZE == 0) {
+        QueueNode* emptyBlock = (QueueNode*) (((uint64)head / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE );
 
-        if ( (uint64)self->head == (uint64)self->last) {
+        if ( (uint64)head == (uint64)last) {
             // no next allocated block, current is empty => reset it
-            self->head = nullptr;
-            self->last = (T**) (((uint64)self->last / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
+            head = nullptr;
+            last = (T**) (((uint64)last / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
         } else {
             // hoping to next allocated block
-            self->head = (T**) (*(QueueNode**)self->head);
+            head = (T**) (*(QueueNode**)head);
             // if head == last, block empty
-            if (self->head == self->last)
-                self->head = nullptr;
+            if (head == last)
+                head = nullptr;
             delete emptyBlock;
         }
         return data;
     }
 
     // if head == last, block is empty, reset it
-    if ((uint64)self->head == (uint64)self->last) {
-        self->last = (T**) (((uint64)self->last / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE );
-        self->head = nullptr;
+    if ((uint64)head == (uint64)last) {
+        last = (T**) (((uint64)last / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE );
+        head = nullptr;
     }
 
     return data;
 }
 
 template<typename T>
-void Queue<T>::push(Queue<T>*self ,T *data) {
+void Queue<T>::push(T *data) {
 
     // placing new data on self->last
-    if (((uint64)self->last + sizeof(QueueNode*)) % MEM_BLOCK_SIZE == 0) {
+    if (((uint64)last + sizeof(QueueNode*)) % MEM_BLOCK_SIZE == 0) {
         // data exceeded block
-        *(QueueNode **)self->last = new QueueNode();
-        self->last = (T**) *(QueueNode**)self->last;
-        *self->last = data;
-        self->last = (T**) ((uint64)self->last + sizeof(T*));
+        *(QueueNode **)last = new QueueNode();
+        last = (T**) *(QueueNode**)last;
+        *last = data;
+        last = (T**) ((uint64)last + sizeof(T*));
         return;
     }
 
     // block not filled yet
-    if (!self->head) self->head = self->last;
-    *self->last = data;
-    self->last = (T**) ((uint64)self->last + sizeof(T*));
+    if (!head) head = last;
+    *last = data;
+    last = (T**) ((uint64)last + sizeof(T*));
 }
 
 template<typename T>

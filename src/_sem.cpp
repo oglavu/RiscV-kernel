@@ -30,13 +30,13 @@ int _sem::signal() {
 }
 
 void _sem::block() {
-    Queue<_thread>::push(blocked, _thread::runningThread);
+    blocked->push( _thread::runningThread);
     _thread::runningThread->suspend();
     _thread::yield();
 }
 
 void _sem::unblock(){
-    _thread* cur = Queue<_thread>::pop(blocked);
+    _thread* cur = blocked->pop();
     DataPack* i = _sem::timed, *j = nullptr;
     if (i) {
         while (i && i->thr != cur) {
@@ -73,7 +73,7 @@ int _sem::close() {
     closed = true;
 
     while(blocked->peekFirst()) {
-        _thread* cur = Queue<_thread>::pop(blocked);
+        _thread* cur = blocked->pop();
         cur->unsuspend();
         Scheduler::put(cur);
     }
@@ -119,7 +119,7 @@ int _sem::timedWait(_sem *handle, time_t time) {
             cur->next = dp;
         }
 
-        Queue<_thread>::push(handle->blocked, _thread::runningThread);
+        handle->blocked->push(_thread::runningThread);
         dp->nodeAddr = handle->blocked->getLastInsertAddr();
         _thread::runningThread->suspend();
         _thread::yield();
