@@ -120,7 +120,7 @@ int _sem::timedWait(_sem *handle, time_t time) {
         }
 
         Queue<_thread>::push(handle->blocked, _thread::runningThread);
-        dp->nodeAddr = handle->blocked->getHeadNodeAddr();
+        dp->nodeAddr = handle->blocked->getLastInsertAddr();
         _thread::runningThread->suspend();
         _thread::yield();
 
