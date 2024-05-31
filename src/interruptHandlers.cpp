@@ -39,7 +39,7 @@ namespace interruptHandlers {
         _halt();
     }
 
-    void handleConsoleInterrupt() {
+    inline void handleConsoleInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SEIP);
         uint64 sepc = RiscV::sepcR();
         uint64 sstatus = RiscV::sstatusR();
@@ -60,22 +60,12 @@ namespace interruptHandlers {
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 
-        if (_thread::sleepTimeFirst != 0) _thread::sleepTimeFirst--;
-        else if (_thread::sleepList){
-            _thread::sleepList->thread->unsuspend();
-            Scheduler::put(_thread::sleepList->thread);
-            int* toDel = (int*) _thread::sleepList;
-            _thread::sleepList = _thread::sleepList->next;
-            delete toDel;
-            _thread::sleepTimeFirst = (_thread::sleepList) ? _thread::sleepList->timeRel : 0;
-            if (_thread::sleepList) _thread::sleepList->timeRel = 0;
-        }
+        Scheduler::incTimer();
+        Scheduler::tryToWake();
 
-
-
-        uint64 n = ++_thread::curPeriod;
+        uint64 n = _thread::incCurPeriod();
         if (n >= _thread::runningThread->getPeriods()) {
-            _thread::curPeriod = 0;
+            _thread::resetCurPeriod();
             _thread::dispatch();
         }
     }
@@ -178,7 +168,7 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_YIEL:
-                _thread::curPeriod = 0;
+                _thread::resetCurPeriod();
                 _thread::dispatch();
                 break;
             case (uint64) RiscV::CodeOps::SEM_OPEN:

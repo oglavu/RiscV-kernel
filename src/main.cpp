@@ -79,9 +79,7 @@ int main() {
     delete userSemaphore;
 
     // clearing sleeping threads
-    while (_thread::sleepList)
-        _thread::sleepList = _thread::sleepList->next;
-    _thread::sleepTimeFirst = 0;
+    Scheduler::emptySleepingThreads();
 
     // clearing _sem::timed
     while(_sem::timed)

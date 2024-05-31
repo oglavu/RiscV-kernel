@@ -20,17 +20,6 @@ private:
         uint64 sp, ra;
     };
 
-    struct SleepNode {
-        SleepNode* next = nullptr;
-        time_t timeRel;
-        _thread* thread;
-
-        void* operator new(size_t sz);
-        void operator delete(void* p);
-        void* operator new[](size_t sz) = delete;
-        void operator delete[](void* p) = delete;
-    };
-
     _thread* parentThread;
     Context context;
     _thread::ThreadBody body;
@@ -38,6 +27,7 @@ private:
     void* bodyArguement;
     uint64 nPeriods = DEFAULT_TIME_SLICE;
     uint64 stackStartAddr;
+    static uint64 curPeriod;
 
     explicit _thread(_thread::ThreadBody bodyy, void* arg, uint64* stackStartAddrParam);
     static void contextSwitch(_thread::Context* oldCont, _thread::Context* newCont);
@@ -49,15 +39,15 @@ private:
 public:
     static _thread* runningThread;
     static _thread* mainThread;
-    static uint64 curPeriod;
-
-    static SleepNode* sleepList;
-    static time_t sleepTimeFirst;
 
     void suspend() { this->state = ThreadState::Suspended; }
     void unsuspend() { if (state == Suspended) this->state = ThreadState::Ready; }
     uint64 getPeriods() const { return nPeriods; }
     bool isTerminated() const { return this->state == ThreadState::Terminated; }
+
+    static uint64 getCurPeriod() { return curPeriod; }
+    static uint64 incCurPeriod() { return ++curPeriod; }
+    static void resetCurPeriod() { curPeriod = 0; }
 
     static int createThread(thread_p* handle, ThreadBody bodyy, void* arg, uint64* allocStackParam);
     static int sleepThread(time_t);
