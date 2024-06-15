@@ -120,7 +120,6 @@ int _sem::timedWait(_sem *handle, time_t time) {
         }
 
         handle->blocked->push(_thread::runningThread);
-        dp->nodeAddr = handle->blocked->getLastInsertAddr();
         _thread::runningThread->suspend();
         _thread::yield();
 
@@ -135,7 +134,7 @@ int _sem::timedWait(_sem *handle, time_t time) {
 }
 
 void _sem::removeBlocked() {
-    blocked->remove(_sem::timed->nodeAddr);
+    blocked->remove(_sem::timed->thr);
 }
 
 int _sem::tryWait(_sem *handle) {

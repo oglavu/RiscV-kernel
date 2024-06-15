@@ -22,7 +22,6 @@ private:
         _sem* sem;
         _thread* thr;
         time_t timeRel;
-        void* nodeAddr;
 
         void* operator new(size_t sz);
         void operator delete(void* p);

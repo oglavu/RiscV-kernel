@@ -25,7 +25,6 @@ protected:
     T** head = nullptr; // points to first taken address
     T** last = nullptr; // points to first free address
 
-    void* getLastInsertAddr() const { return (void*)((uint64)last - sizeof(T*)); }
     void remove(void* ptr);
 
 public:
@@ -54,7 +53,26 @@ public:
 template<typename T>
 void Queue<T>::remove(void *ptr) {
     T* swapData = this->pop();
-    if (head) *(T**)ptr = swapData;
+    if (!head) return;
+    QueueNode* headNode = (QueueNode*) (((uint64)this->head / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
+    QueueNode* lastNode = (QueueNode*) (((uint64)this->last / MEM_BLOCK_SIZE) * MEM_BLOCK_SIZE);
+
+    int firstT = ((uint64)this->head - (uint64)headNode) / sizeof(T*);
+    int lastT = ((uint64)this->last - (uint64)lastNode) / sizeof(T*) - 1;
+    QueueNode* node = headNode;
+    while(node) {
+        for (int i=0; i<QueueNode::n; i++) {
+            if (headNode == node && i < firstT) continue;
+            if (lastNode == node && i > lastT) continue;
+            if (node->dataArray[i] == (T*)ptr) {
+                node->dataArray[i] = swapData;
+                return;
+            }
+
+        }
+        node = node->next;
+    }
+
 
 }
 
