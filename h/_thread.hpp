@@ -29,6 +29,7 @@ private:
     uint64 nPeriods = DEFAULT_TIME_SLICE;
     uint64 stackStartAddr;
     static uint64 curPeriod;
+    static Queue<_thread>* deadThreads;
 
     explicit _thread(_thread::ThreadBody bodyy, void* arg, uint64* stackStartAddrParam);
     static void contextSwitch(_thread::Context* oldCont, _thread::Context* newCont);
@@ -60,7 +61,8 @@ public:
     static void yield();
 
     static void outputThreadBody(void* status);
-
+    static void freeDeadThreadBody(void* status);
+    static void freeDeadSemBody(void* status);
 
     void* operator new(size_t sz);
     void operator delete(void* p);

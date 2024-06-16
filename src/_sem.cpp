@@ -5,6 +5,7 @@
 #include "../h/_sem.hpp"
 
 _sem::DataPack* _sem::timed = nullptr;
+Queue<_sem>* _sem::deadSems = nullptr;
 time_t _sem::timeAbs = 0;
 
 int _sem::wait() {
@@ -78,6 +79,11 @@ int _sem::close() {
         cur->unsuspend();
         Scheduler::put(cur);
     }
+
+    if (!_sem::deadSems)
+        _sem::deadSems = new Queue<_sem>();
+    _sem::deadSems->push(this);
+
     return 0;
 }
 

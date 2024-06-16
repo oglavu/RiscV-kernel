@@ -15,6 +15,7 @@ private:
     uint32 n;
     bool closed = false;
     Queue<_thread>* blocked;
+    static Queue<_sem>* deadSems;
 
     struct DataPack {
         DataPack* next = nullptr;

@@ -6,6 +6,7 @@
 
 uint64 _thread::curPeriod = 0;
 _thread* _thread::runningThread = nullptr;
+Queue<_thread>* _thread::deadThreads = nullptr;
 _thread* _thread::mainThread = nullptr;
 
 _thread::_thread(_thread::ThreadBody bodyy, void *arg, uint64* allocStack):
@@ -52,10 +53,13 @@ void _thread::init() {
     // context will anyway be changed after first dispatch
     _thread::runningThread = _thread::mainThread;
     _thread::runningThread->state = ThreadState::Running;
+
+    _thread::deadThreads = new Queue<_thread>();
 }
 
 void _thread::complete() {
     _thread::runningThread->state = ThreadState::Terminated;
+    _thread::deadThreads->push(_thread::runningThread);
     _thread::yield();
 }
 
@@ -102,4 +106,24 @@ void _thread::outputThreadBody(void *status) {
         _buffer::outBufferFlush();
         _thread::yield();
     }
+}
+
+void _thread::freeDeadThreadBody(void *status) {
+    while(*(bool*)status) {
+        while(_thread::deadThreads && _thread::deadThreads->peekFirst()) {
+            delete _thread::deadThreads->pop();
+        }
+        _thread::yield();
+    }
+    delete _thread::deadThreads;
+}
+
+void _thread::freeDeadSemBody(void *status) {
+    while(*(bool*)status) {
+        while(_sem::deadSems && _sem::deadSems->peekFirst()) {
+            delete _sem::deadSems->pop();
+        }
+        _thread::yield();
+    }
+    delete _sem::deadSems;
 }

@@ -49,7 +49,7 @@ void Scheduler::tryToWake() {
 void Scheduler::emptySleepingThreads() {
     if (!sleepingPQ || sleepingPQ->isEmpty()) return;
     while(Scheduler::sleepingPQ->peekFirst()){
-        sleepingPQ->pop();
+        delete sleepingPQ->pop();
     }
     Scheduler::timer = 0;
 }
