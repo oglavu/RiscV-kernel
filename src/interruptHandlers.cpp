@@ -60,6 +60,18 @@ namespace interruptHandlers {
         if (!_thread::runningThread) return;
         if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
 
+        while (_sem::timed && _sem::timeAbs == 0) {
+            _sem::timed->thr->setTimeOut();
+            _sem::timed->sem->removeBlocked();
+            Scheduler::put(_sem::timed->thr);
+
+            _sem::timeAbs = (_sem::timed->next) ? _sem::timed->next->timeRel : 0;
+            int *ptr = (int *) _sem::timed;
+            _sem::timed = _sem::timed->next;
+            delete ptr;
+        }
+
+
         Scheduler::incTimer();
         Scheduler::tryToWake();
 

@@ -30,18 +30,7 @@ void _thread::dispatch() {
         Scheduler::put(oldR);
     }
 
-    _thread* newR;
-    if (_sem::timed && _sem::timeAbs == 0) {
-        newR = _sem::timed->thr;
-        _sem::timed->sem->removeBlocked();
-        _sem::timed->sem->timedOut = true;
-        _sem::timeAbs = (_sem::timed->next) ? _sem::timed->next->timeRel : 0;
-        int* ptr = (int*)_sem::timed;
-        _sem::timed = _sem::timed->next;
-        delete ptr;
-    } else
-        newR = Scheduler::get();
-
+    _thread* newR = Scheduler::get();
 
     if (newR) {
         _thread::runningThread = newR;

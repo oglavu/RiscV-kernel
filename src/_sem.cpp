@@ -44,6 +44,7 @@ void _sem::unblock(){
             i = i->next;
         }
         if (i && i->thr == cur) {
+            // thr found
             if (j) {
                 if (i->next) i->next->timeRel += i->timeRel;
                 j->next = i->next;
@@ -123,12 +124,15 @@ int _sem::timedWait(_sem *handle, time_t time) {
         _thread::runningThread->suspend();
         _thread::yield();
 
-        if (handle->timedOut) handle->n++;
+
+        if (_thread::runningThread->isTimeOut()) {
+            handle->n++;
+        }
 
     }
 
-    int ret = (handle->closed) ? -1 : (handle->timedOut) ? -2 : 0;
-    handle->timedOut = false;
+    int ret = (handle->closed) ? -1 : (_thread::runningThread->isTimeOut()) ? -2 : 0;
+    _thread::runningThread->resetTimeOut();
 
     return ret;
 }

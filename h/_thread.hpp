@@ -24,6 +24,7 @@ private:
     Context context;
     _thread::ThreadBody body;
     ThreadState state = Init;
+    bool timedOut = false; // must stay after ThreadState for packing
     void* bodyArguement;
     uint64 nPeriods = DEFAULT_TIME_SLICE;
     uint64 stackStartAddr;
@@ -40,6 +41,9 @@ public:
     static _thread* runningThread;
     static _thread* mainThread;
 
+    bool isTimeOut() const {return timedOut;}
+    void setTimeOut() { timedOut = true; }
+    void resetTimeOut() { timedOut = false; }
     void suspend() { this->state = ThreadState::Suspended; }
     void unsuspend() { if (state == Suspended) this->state = ThreadState::Ready; }
     uint64 getPeriods() const { return nPeriods; }

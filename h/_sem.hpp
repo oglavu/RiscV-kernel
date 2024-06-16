@@ -14,7 +14,6 @@ class _sem {
 private:
     uint32 n;
     bool closed = false;
-    bool timedOut = false;
     Queue<_thread>* blocked;
 
     struct DataPack {
@@ -28,7 +27,6 @@ private:
         void* operator new[](size_t sz) = delete;
         void operator delete[](void* p) = delete;
     };
-    void removeBlocked();
 
     explicit _sem(uint32 val):
             n(val), blocked(new Queue<_thread>()) {}
@@ -40,6 +38,8 @@ private:
 public:
     static DataPack* timed;
     static time_t timeAbs;
+
+    void removeBlocked();
 
     static int createSemaphore(_sem** handle, unsigned init);
     static int closeSemaphore(_sem* handle);
