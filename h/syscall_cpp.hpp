@@ -41,15 +41,10 @@ private:
     sem_t myHandle;
 };
 
-struct _node {
-    thread_t handle;
-    _node* next = nullptr;
-};
 
 class PeriodicThread : public Thread {
 public:
     void terminate ();
-    static _node* pendingTermination;
 protected:
     PeriodicThread (time_t period);
     ~PeriodicThread() override;

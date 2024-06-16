@@ -4,8 +4,6 @@
 
 #include "../h/syscall_cpp.hpp"
 
-_node* PeriodicThread::pendingTermination = nullptr;
-
 
 /* -------- MEM ALLOC ---------- */
 void *operator new(size_t n) {
@@ -62,58 +60,20 @@ PeriodicThread::PeriodicThread(time_t period) :
 
 
 void PeriodicThread::run() {
-    _node* node, *prev = nullptr;
-    while(true) {
+    if (period == 0) return;
+    while(period > 0) {
         time_sleep(period);
-        // check if current node's termination is pending
-        node = pendingTermination;
-        while(node && node->handle != getHandle()) {
-            prev = node; node = node->next;
-        }
-        if (node) break;
-
         // do periodic action
         this->periodicActivation();
     }
-
-    // remove cur thr from pending
-    if (node == pendingTermination) {
-        pendingTermination = pendingTermination->next;
-    } else if (node->next) {
-        node->handle = node->next->handle;
-        _node* nxt = node->next;
-        node->next = node->next->next;
-        node = nxt;
-    } else {
-        prev->next = nullptr;
-    }
-    delete node;
 }
 
 void PeriodicThread::terminate() {
-    _node* n = new _node;
-    n->next = pendingTermination;
-    n->handle = this->getHandle();
-    pendingTermination = n;
+    period = 0;
 }
 
 PeriodicThread::~PeriodicThread() {
-    if (!pendingTermination) return;
-    _node *cur = pendingTermination;
-    _node *prev = nullptr;
-    for (; cur && cur->handle != getHandle(); prev = cur, cur = cur->next);
-    if (pendingTermination == cur) {
-        pendingTermination = cur->next;
-        delete cur;
-    } else if (cur && cur->next) {
-        cur->handle = cur->next->handle;
-        int *p = (int *) cur->next;
-        cur->next = cur->next->next;
-        delete p;
-    } else if (cur) {
-        delete cur;
-        prev->next = nullptr;
-    }
+    terminate();
 }
 
 
