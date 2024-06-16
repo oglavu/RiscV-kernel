@@ -215,7 +215,23 @@ namespace interruptHandlers {
                 _buffer::outBuffer->putc((char)a1);
                 break;
             default:
-                break;
+                KprintString("SysCall: Unknown system call\n");
+                return;
+        }
+
+
+        // sync context switch on syscall
+        bool DispatchCondition = (codeOp != RiscV::THR_YIEL &&
+                                 codeOp != RiscV::THR_SLEE &&
+                                 codeOp != RiscV::SEM_WAIT &&
+                                 codeOp != RiscV::SEM_TMDW &&
+                                 codeOp != RiscV::SEM_SIGN &&
+                                 codeOp != RiscV::CON_PUTC &&
+                                 scause != causes::sysCall);
+
+        if (DispatchCondition) {
+            _thread::resetCurPeriod();
+            _thread::dispatch();
         }
 
         RiscV::sstatusW(sstatus);
