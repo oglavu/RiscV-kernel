@@ -155,7 +155,7 @@ int _sem::tryWait(_sem *handle) {
 }
 
 void *_sem::DataPack::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 void _sem::DataPack::operator delete(void *p) {
@@ -164,7 +164,7 @@ void _sem::DataPack::operator delete(void *p) {
 
 
 void *_sem::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 void _sem::operator delete(void *p) {

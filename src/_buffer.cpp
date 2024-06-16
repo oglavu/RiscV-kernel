@@ -29,7 +29,7 @@ void _buffer::putc(char c){
 }
 
 void *_buffer::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 void _buffer::operator delete(void *p) {

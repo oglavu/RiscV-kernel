@@ -150,7 +150,7 @@ void Queue<T>::QueueNode::operator delete(void* p) {
 
 template<typename T>
 void *Queue<T>::QueueNode::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 template<typename T>
@@ -160,7 +160,7 @@ void Queue<T>::operator delete(void* p) {
 
 template<typename T>
 void *Queue<T>::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 

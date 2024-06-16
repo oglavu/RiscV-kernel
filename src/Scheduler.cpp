@@ -65,7 +65,7 @@ void Scheduler::init() {
 
 
 void *Scheduler::SleepNode::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 void Scheduler::SleepNode::operator delete(void *p) {

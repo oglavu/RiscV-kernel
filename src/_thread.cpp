@@ -94,7 +94,7 @@ int _thread::sleepThread(time_t time) {
 }
 
 void *_thread::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 void _thread::operator delete(void *p) {

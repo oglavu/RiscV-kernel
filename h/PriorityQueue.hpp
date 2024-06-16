@@ -131,7 +131,7 @@ void PriorityQueue<T>::operator delete(void* p) {
 
 template<typename T>
 void *PriorityQueue<T>::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc(sz);
+    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
 }
 
 
