@@ -13,6 +13,7 @@ public:
 
     static void popSppSpie();
     static void setStvecTable();
+    static void shutdown();
 
     enum CodeOps: uint64{
         MEM_ALOC = 0x01,

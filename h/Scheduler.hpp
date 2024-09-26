@@ -8,13 +8,13 @@
 #include "Queue.hpp"
 #include "PriorityQueue.hpp"
 
-class _thread;
+class PCB;
 
 class Scheduler {
 public:
     struct SleepNode {
         time_t delay; // delay is measured against Scheduler::timer
-        _thread* thread;
+        PCB* thread;
 
         static bool GRT(const SleepNode* sn1, const SleepNode* sn2) {
             return sn1->delay > sn2->delay;
@@ -26,12 +26,12 @@ public:
         void operator delete[](void* p) = delete;
     };
 
-    static Queue<_thread>* readyQueue;
+    static Queue<PCB>* readyQueue;
     static PriorityQueue<SleepNode>* sleepingPQ;
 
-    static _thread* get();
-    static void put(_thread*);
-    static void sleep(_thread* ,time_t);
+    static PCB* get();
+    static void put(PCB*);
+    static void sleep(PCB* , time_t);
     static void tryToWake();
 
     static void emptySleepingThreads();

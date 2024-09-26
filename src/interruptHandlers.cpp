@@ -3,10 +3,10 @@
 //
 
 #include "../h/MemoryAllocator.hpp"
-#include "../h/_thread.hpp"
+#include "../h/pcb.hpp"
 #include "../h/_buffer.hpp"
 #include "../h/_print.hpp"
-#include "../h/_sem.hpp"
+#include "../h/sem.hpp"
 #include "../h/RiscV.hpp"
 
 extern "C" void _halt();
@@ -36,7 +36,7 @@ namespace interruptHandlers {
 
         // flushing all accumulated data to console
         _buffer::outBufferFlush();
-        _halt();
+        RiscV::shutdown();
     }
 
     inline void handleConsoleInterrupt() {
@@ -57,17 +57,17 @@ namespace interruptHandlers {
     inline void handleTimerInterrupt() {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
 
-        if (!_thread::runningThread) return;
-        if (_sem::timed && _sem::timeAbs != 0) _sem::timeAbs--;
+        if (!PCB::runningThread) return;
+        if (SEM::timed && SEM::timeAbs != 0) SEM::timeAbs--;
 
-        while (_sem::timed && _sem::timeAbs == 0) {
-            _sem::timed->thr->setTimeOut();
-            _sem::timed->sem->removeBlocked();
-            Scheduler::put(_sem::timed->thr);
+        while (SEM::timed && SEM::timeAbs == 0) {
+            SEM::timed->thr->setTimeOut();
+            SEM::timed->sem->removeBlocked();
+            Scheduler::put(SEM::timed->thr);
 
-            _sem::timeAbs = (_sem::timed->next) ? _sem::timed->next->timeRel : 0;
-            int *ptr = (int *) _sem::timed;
-            _sem::timed = _sem::timed->next;
+            SEM::timeAbs = (SEM::timed->next) ? SEM::timed->next->timeRel : 0;
+            int *ptr = (int *) SEM::timed;
+            SEM::timed = SEM::timed->next;
             delete ptr;
         }
 
@@ -75,10 +75,10 @@ namespace interruptHandlers {
         Scheduler::incTimer();
         Scheduler::tryToWake();
 
-        uint64 n = _thread::incCurPeriod();
-        if (n >= _thread::runningThread->getPeriods()) {
-            _thread::resetCurPeriod();
-            _thread::dispatch();
+        uint64 n = PCB::incCurPeriod();
+        if (n >= PCB::runningThread->getPeriods()) {
+            PCB::resetCurPeriod();
+            PCB::dispatch();
         }
     }
 
@@ -167,7 +167,7 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_CREA:
-                retVal = _thread::createThread((_thread**) a1,
+                retVal = PCB::createThread((PCB**) a1,
                                                (void(*)(void*))a2,
                                                (void*)a3,
                                                (uint64*)a4);
@@ -175,46 +175,46 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_EXIT:
-                retVal = _thread::exitThread();
+                retVal = PCB::exitThread();
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_YIEL:
-                _thread::resetCurPeriod();
-                _thread::dispatch();
+                PCB::resetCurPeriod();
+                PCB::dispatch();
                 break;
             case (uint64) RiscV::CodeOps::SEM_OPEN:
-                retVal = _sem::createSemaphore((_sem**)a1, (unsigned)a2);
+                retVal = SEM::createSemaphore((SEM**)a1, (unsigned)a2);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_CLOS:
-                retVal = _sem::closeSemaphore((_sem*)a1);
+                retVal = SEM::closeSemaphore((SEM*)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_WAIT:
-                retVal = ((_sem*)a1)->wait();
+                retVal = ((SEM*)a1)->wait();
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_SIGN:
-                retVal = ((_sem*)a1)->signal();
+                retVal = ((SEM*)a1)->signal();
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_TMDW:
-                retVal = _sem::timedWait((_sem*)a1, (time_t)a2);
+                retVal = SEM::timedWait((SEM*)a1, (time_t)a2);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_TRYW:
-                retVal = _sem::tryWait((_sem*)a1);
+                retVal = SEM::tryWait((SEM*)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::THR_SLEE:
-                retVal = _thread::sleepThread((time_t)a1);
+                retVal = PCB::sleepThread((time_t)a1);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
@@ -242,8 +242,8 @@ namespace interruptHandlers {
                                  scause != causes::sysCall);
 
         if (DispatchCondition) {
-            _thread::resetCurPeriod();
-            _thread::dispatch();
+            PCB::resetCurPeriod();
+            PCB::dispatch();
         }
 
         RiscV::sstatusW(sstatus);

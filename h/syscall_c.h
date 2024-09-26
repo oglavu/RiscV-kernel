@@ -11,16 +11,16 @@
 void* mem_alloc(size_t size);
 int mem_free(void*);
 
-class _thread;
-typedef _thread* thread_t;
+class PCB;
+typedef PCB* thread_t;
 int thread_create(thread_t* handle,
                   void(*start_routine) (void*),
                   void* arg );
 int thread_exit();
 void thread_dispatch();
 
-class _sem;
-typedef _sem* sem_t;
+class SEM;
+typedef SEM* sem_t;
 int sem_open (
         sem_t* handle,
         unsigned init

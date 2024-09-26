@@ -6,15 +6,15 @@
 
 bool Scheduler::initialised = false;
 uint64 Scheduler::timer = 0;
-Queue<_thread>* Scheduler::readyQueue = nullptr;
+Queue<PCB>* Scheduler::readyQueue = nullptr;
 PriorityQueue<Scheduler::SleepNode>* Scheduler::sleepingPQ = nullptr;
 
-_thread *Scheduler::get() {
+PCB *Scheduler::get() {
     return (Scheduler::initialised) ?
         readyQueue->pop() : nullptr;
 }
 
-void Scheduler::put(_thread * data) {
+void Scheduler::put(PCB * data) {
     if (!Scheduler::initialised)
         Scheduler::init();
     readyQueue->push(data);
@@ -28,7 +28,7 @@ void Scheduler::incTimer() {
     }
 }
 
-void Scheduler::sleep(_thread* thread,time_t time) {
+void Scheduler::sleep(PCB* thread,time_t time) {
     SleepNode* node = new SleepNode;
     node->delay = Scheduler::timer + time;
     node->thread = thread;
@@ -57,7 +57,7 @@ void Scheduler::emptySleepingThreads() {
 void Scheduler::init() {
     if (Scheduler::initialised) return;
     // init queue for ready threads
-    Scheduler::readyQueue = new Queue<_thread>();
+    Scheduler::readyQueue = new Queue<PCB>();
     // init queue for sleeping threads
     Scheduler::sleepingPQ = new PriorityQueue<SleepNode>(&SleepNode::GRT);
     Scheduler::initialised = true;

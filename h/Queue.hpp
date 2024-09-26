@@ -45,7 +45,7 @@ public:
 
     ~Queue();
 
-    friend class _sem;
+    friend class SEM;
 };
 
 

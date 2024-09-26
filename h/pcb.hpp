@@ -2,45 +2,45 @@
 // Created by os on 5/8/24.
 //
 
-#ifndef PROJEKAT__THREAD_HPP
-#define PROJEKAT__THREAD_HPP
+#ifndef PROJEKAT_PCB_HPP
+#define PROJEKAT_PCB_HPP
 
 #include "RiscV.hpp"
 #include "Scheduler.hpp"
 #include "_buffer.hpp"
-#include "_sem.hpp"
+#include "sem.hpp"
 
-class _thread {
+class PCB {
 private:
     using ThreadBody = void (*) (void*);
-    using thread_p = _thread*;
+    using thread_p = PCB*;
     enum ThreadState {Init, Ready, Running, Suspended, Terminated};
 
     struct Context {
         uint64 sp, ra;
     };
 
-    _thread* parentThread;
+    PCB* parentThread;
     Context context;
-    _thread::ThreadBody body;
+    PCB::ThreadBody body;
     ThreadState state = Init;
     bool timedOut = false; // must stay after ThreadState for packing
     void* bodyArguement;
     uint64 nPeriods = DEFAULT_TIME_SLICE;
     uint64 stackStartAddr;
     static uint64 curPeriod;
-    static Queue<_thread>* deadThreads;
+    static Queue<PCB>* deadThreads;
 
-    explicit _thread(_thread::ThreadBody bodyy, void* arg, uint64* stackStartAddrParam);
-    static void contextSwitch(_thread::Context* oldCont, _thread::Context* newCont);
+    explicit PCB(PCB::ThreadBody bodyy, void* arg, uint64* stackStartAddrParam);
+    static void contextSwitch(PCB::Context* oldCont, PCB::Context* newCont);
     static void wrap();
     static void init();
     static void complete();
 
 
 public:
-    static _thread* runningThread;
-    static _thread* mainThread;
+    static PCB* runningThread;
+    static PCB* mainThread;
 
     bool isTimeOut() const {return timedOut;}
     void setTimeOut() { timedOut = true; }
@@ -70,11 +70,11 @@ public:
     void operator delete[](void* p) = delete;
 
 
-    ~_thread() {
+    ~PCB() {
         delete (uint64*)stackStartAddr;
         this->state = ThreadState::Terminated;
     }
 };
 
 
-#endif //PROJEKAT__THREAD_HPP
+#endif //PROJEKAT_PCB_HPP

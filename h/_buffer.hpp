@@ -5,7 +5,7 @@
 #ifndef PROJEKAT__BUFFER_HPP
 #define PROJEKAT__BUFFER_HPP
 
-#include "_sem.hpp"
+#include "sem.hpp"
 #include "MemoryAllocator.hpp"
 
 
@@ -32,8 +32,8 @@ public:
 private:
 
 
-    _sem* spaceAvailable;
-    _sem* itemAvailable;
+    SEM* spaceAvailable;
+    SEM* itemAvailable;
     static const uint64 SIZE = 512;
     uint64 start = 0, end = 0;
     char array[SIZE];

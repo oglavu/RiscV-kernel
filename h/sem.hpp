@@ -2,25 +2,25 @@
 // Created by os on 5/19/24.
 //
 
-#ifndef PROJEKAT__SEM_HPP
-#define PROJEKAT__SEM_HPP
+#ifndef PROJEKAT_SEM_HPP
+#define PROJEKAT_SEM_HPP
 
 #include "../lib/hw.h"
 #include "Queue.hpp"
-#include "_thread.hpp"
+#include "pcb.hpp"
 #include "Scheduler.hpp"
 
-class _sem {
+class SEM {
 private:
     uint32 n;
     bool closed = false;
-    Queue<_thread>* blocked;
-    static Queue<_sem>* deadSems;
+    Queue<PCB>* blocked;
+    static Queue<SEM>* deadSems;
 
     struct DataPack {
         DataPack* next = nullptr;
-        _sem* sem;
-        _thread* thr;
+        SEM* sem;
+        PCB* thr;
         time_t timeRel;
 
         void* operator new(size_t sz);
@@ -29,8 +29,8 @@ private:
         void operator delete[](void* p) = delete;
     };
 
-    explicit _sem(uint32 val):
-            n(val), blocked(new Queue<_thread>()) {}
+    explicit SEM(uint32 val):
+            n(val), blocked(new Queue<PCB>()) {}
 
     void block();
     void unblock();
@@ -42,16 +42,16 @@ public:
 
     void removeBlocked();
 
-    static int createSemaphore(_sem** handle, unsigned init);
-    static int closeSemaphore(_sem* handle);
-    static int timedWait(_sem* handle, time_t time);
-    static int tryWait(_sem* handle);
+    static int createSemaphore(SEM** handle, unsigned init);
+    static int closeSemaphore(SEM* handle);
+    static int timedWait(SEM* handle, time_t time);
+    static int tryWait(SEM* handle);
 
     int wait();
     int signal();
     uint32 value() const { return n; }
 
-    ~_sem() {
+    ~SEM() {
         close();
         delete blocked;
     }
@@ -61,9 +61,9 @@ public:
     void* operator new[](size_t sz) = delete;
     void operator delete[](void* p) = delete;
 
-    friend class _thread;
+    friend class PCB;
 
 };
 
 
-#endif //PROJEKAT__SEM_HPP
+#endif //PROJEKAT_SEM_HPP

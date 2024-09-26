@@ -9,8 +9,8 @@ _buffer* _buffer::inBuffer = nullptr;
 _buffer* _buffer::outBuffer = nullptr;
 
 _buffer::_buffer() {
-    _sem::createSemaphore(&this->spaceAvailable, SIZE);
-    _sem::createSemaphore(&this->itemAvailable, 0);
+    SEM::createSemaphore(&this->spaceAvailable, SIZE);
+    SEM::createSemaphore(&this->itemAvailable, 0);
 }
 
 char _buffer::getc() {
@@ -41,8 +41,8 @@ bool _buffer::isEmpty() {
 }
 
 _buffer::~_buffer() {
-    _sem::closeSemaphore(this->spaceAvailable);
-    _sem::closeSemaphore(this->itemAvailable);
+    SEM::closeSemaphore(this->spaceAvailable);
+    SEM::closeSemaphore(this->itemAvailable);
 }
 
 void _buffer::outBufferFlush() {
