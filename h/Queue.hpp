@@ -39,6 +39,7 @@ public:
     void operator delete[](void*)  = delete;
 
     T* peekFirst() const { return (T*)head; }
+    bool isEmpty() const { return !head; }
 
     void push(T* data);
     T* pop();

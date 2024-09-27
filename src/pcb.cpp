@@ -5,22 +5,25 @@
 #include "../h/pcb.hpp"
 
 uint64 PCB::curPeriod = 0;
+bool PCB::initialised = false;
 PCB* PCB::runningThread = nullptr;
 Queue<PCB>* PCB::deadThreads = nullptr;
 PCB* PCB::mainThread = nullptr;
 
 PCB::PCB(PCB::ThreadBody bodyy, void *arg, uint64* allocStack):
                     body(bodyy), bodyArguement(arg) {
-    if (!PCB::mainThread)
+    if (!PCB::initialised)
         PCB::init();
     // stack grows downwards, so first location is top of allocated space
-    stackStartAddr = (uint64)allocStack;
-    parentThread = PCB::runningThread;
-    // Not subtracting one bcs stack should point to last TAKEN address
-    context.sp = stackStartAddr + sizeof(uint64)*DEFAULT_STACK_SIZE;
-    context.ra = (uint64) &PCB::wrap;
     state = ThreadState::Ready;
-    if (body) Scheduler::put(this);
+    stackPtr = allocStack;
+    parentThread = PCB::runningThread;
+
+    // Not subtracting one bcs stack should point to last TAKEN address
+    context.sp = (uint64)stackPtr + sizeof(uint64) * DEFAULT_STACK_SIZE;
+    context.ra = (uint64) &PCB::wrap;
+
+    Scheduler::put(this);
 }
 
 void PCB::dispatch() {
@@ -43,24 +46,26 @@ void PCB::dispatch() {
 void PCB::wrap() {
     RiscV::popSppSpie();
     runningThread->body(runningThread->bodyArguement);
-    PCB::complete();
+    PCB::exitThread();
 }
 
 void PCB::init() {
-    if (mainThread) return;
-    PCB::mainThread = (PCB*)1; // blocking infinite loop
-    PCB::mainThread = new PCB(nullptr, nullptr, nullptr);
+    if (PCB::initialised) return;
+    // allocating thread memory
+    PCB::mainThread = (PCB*) MemoryAllocator::mem_alloc(sizeof(PCB));
+
+    // setting up main kernel thread context
+    PCB::mainThread->parentThread = nullptr;
+    PCB::mainThread->body = nullptr;
+    PCB::mainThread->bodyArguement = nullptr;
+    PCB::mainThread->stackPtr = nullptr;
+    PCB::mainThread->timeSlice = DEFAULT_TIME_SLICE;
     // context will anyway be changed after first dispatch
     PCB::runningThread = PCB::mainThread;
     PCB::runningThread->state = ThreadState::Running;
 
     PCB::deadThreads = new Queue<PCB>();
-}
-
-void PCB::complete() {
-    PCB::runningThread->state = ThreadState::Terminated;
-    PCB::deadThreads->push(PCB::runningThread);
-    PCB::yield();
+    PCB::initialised = true;
 }
 
 // stack is allocated in ABI
@@ -73,7 +78,9 @@ int PCB::createThread(PCB **handle, PCB::ThreadBody bodyy, void *arg, uint64* al
 
 int PCB::exitThread() {
     if (PCB::runningThread->state != ThreadState::Running) return -1;
-    PCB::runningThread->complete();
+    PCB::runningThread->state = ThreadState::Terminated;
+    PCB::deadThreads->push(PCB::runningThread);
+    PCB::yield();
     return 0;
 }
 
@@ -101,6 +108,11 @@ void PCB::operator delete(void *p) {
     MemoryAllocator::mem_free(p);
 }
 
+PCB::~PCB() {
+    delete stackPtr;
+    this->state = ThreadState::Terminated;
+}
+
 void PCB::outputThreadBody(void *status) {
     while(*(bool*)status) {
         _buffer::outBufferFlush();
@@ -108,22 +120,3 @@ void PCB::outputThreadBody(void *status) {
     }
 }
 
-void PCB::freeDeadThreadBody(void *status) {
-    while(*(bool*)status) {
-        while(PCB::deadThreads && PCB::deadThreads->peekFirst()) {
-            delete PCB::deadThreads->pop();
-        }
-        PCB::yield();
-    }
-    delete PCB::deadThreads;
-}
-
-void PCB::freeDeadSemBody(void *status) {
-    while(*(bool*)status) {
-        while(SEM::deadSems && SEM::deadSems->peekFirst()) {
-            delete SEM::deadSems->pop();
-        }
-        PCB::yield();
-    }
-    delete SEM::deadSems;
-}

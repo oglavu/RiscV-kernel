@@ -45,9 +45,7 @@ namespace interruptHandlers {
         uint64 sstatus = RiscV::sstatusR();
         //  console interrupt (supervisor external interrupt)
         if (plic_claim() == RiscV::HardwareEntries::IRQ_CONS){
-
             _buffer::inBufferFill();
-
         }
         plic_complete(CONSOLE_IRQ);
         RiscV::sstatusW(sstatus);
@@ -73,7 +71,7 @@ namespace interruptHandlers {
 
 
         Scheduler::incTimer();
-        Scheduler::tryToWake();
+        Scheduler::alarm();
 
         uint64 n = PCB::incCurPeriod();
         if (n >= PCB::runningThread->getPeriods()) {

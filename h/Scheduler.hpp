@@ -11,7 +11,7 @@
 class PCB;
 
 class Scheduler {
-public:
+private:
     struct SleepNode {
         time_t delay; // delay is measured against Scheduler::timer
         PCB* thread;
@@ -28,33 +28,24 @@ public:
 
     static Queue<PCB>* readyQueue;
     static PriorityQueue<SleepNode>* sleepingPQ;
+    static uint64 timer;
+    static bool initialised;
+public:
 
+    static void init();
     static PCB* get();
     static void put(PCB*);
     static void sleep(PCB* , time_t);
-    static void tryToWake();
+    static void alarm();
 
-    static void emptySleepingThreads();
-    static void incTimer();
+    static void clear();
+    static void incTimer() { Scheduler::timer++; }
     static uint64 getTime() { return Scheduler::timer; }
 
     Scheduler() = delete;
     Scheduler(const Scheduler&) = delete;
     Scheduler& operator =(Scheduler&) = delete;
-    ~Scheduler() {
-        delete sleepingPQ;
-        delete readyQueue;
-    }
-private:
-
-
-
-    static uint64 timer;
-    static bool initialised;
-
-    static void init();
-
-
+    ~Scheduler();
 };
 
 

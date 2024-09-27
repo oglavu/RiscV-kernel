@@ -8,6 +8,7 @@
 #include "sem.hpp"
 #include "MemoryAllocator.hpp"
 
+class SEM;
 
 class _buffer {
 public:
@@ -30,7 +31,6 @@ public:
     void operator delete[](void* p) = delete;
 
 private:
-
 
     SEM* spaceAvailable;
     SEM* itemAvailable;

@@ -14,14 +14,6 @@ struct DataBlock {
 
 class MemoryAllocator {
 private:
-
-
-
-
-    static bool initialised;
-
-    static void init();
-public:
     // in bytes
     static uint64 startAddr;
     static uint64 endAddr;
@@ -29,10 +21,13 @@ public:
     static const uint64 HEADER_SIZE;
     static DataBlock* first;
 
+    static bool initialised;
+public:
     MemoryAllocator() = delete;
     MemoryAllocator(const MemoryAllocator &obj) = delete;
     MemoryAllocator operator=(MemoryAllocator& obj) = delete;
 
+    static void init();
 
     static void* mem_alloc(size_t size);
     static int mem_free(void* ptr);

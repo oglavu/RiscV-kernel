@@ -20,14 +20,6 @@ void Scheduler::put(PCB * data) {
     readyQueue->push(data);
 }
 
-void Scheduler::incTimer() {
-    if (Scheduler::sleepingPQ && !sleepingPQ->isEmpty()) {
-        Scheduler::timer++;
-    } else {
-        Scheduler::timer = 0;
-    }
-}
-
 void Scheduler::sleep(PCB* thread,time_t time) {
     SleepNode* node = new SleepNode;
     node->delay = Scheduler::timer + time;
@@ -37,7 +29,7 @@ void Scheduler::sleep(PCB* thread,time_t time) {
 }
 
 
-void Scheduler::tryToWake() {
+void Scheduler::alarm() {
     if (!sleepingPQ || !sleepingPQ->peekFirst()) return;
     if (Scheduler::timer >= sleepingPQ->peekFirst()->delay) {
         SleepNode* wokenUp = sleepingPQ->pop();
@@ -46,12 +38,12 @@ void Scheduler::tryToWake() {
     }
 }
 
-void Scheduler::emptySleepingThreads() {
+void Scheduler::clear() {
     if (!sleepingPQ || sleepingPQ->isEmpty()) return;
     while(Scheduler::sleepingPQ->peekFirst()){
         delete sleepingPQ->pop();
     }
-    Scheduler::timer = 0;
+    delete sleepingPQ;
 }
 
 void Scheduler::init() {
@@ -63,6 +55,9 @@ void Scheduler::init() {
     Scheduler::initialised = true;
 }
 
+Scheduler::~Scheduler() {
+    Scheduler::clear();
+}
 
 void *Scheduler::SleepNode::operator new(size_t sz) {
     return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
