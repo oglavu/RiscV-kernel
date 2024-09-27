@@ -1,5 +1,5 @@
 /build
-/test
 /.idea
+/cmake-build-debug
 kernel
 kernel.asm
