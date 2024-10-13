@@ -18,7 +18,7 @@ sd x\index, \index*8(sp)
 
 
 
-.extern _ZN17interruptHandlers20handleSupervisorTrapEv
+.extern _ZN17interruptHandlers20handleSupervisorTrapEmmmmm
 
 .align 4
 .global _ZN5RiscV13setStvecTableEv
@@ -26,7 +26,7 @@ sd x\index, \index*8(sp)
 # RiscV::setStvecTable()
 _ZN5RiscV13setStvecTableEv:
     PUSH_REGS
-    call _ZN17interruptHandlers20handleSupervisorTrapEv
+    call _ZN17interruptHandlers20handleSupervisorTrapEmmmmm
     POP_REGS
     sret
 

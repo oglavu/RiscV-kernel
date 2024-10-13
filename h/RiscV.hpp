@@ -32,6 +32,16 @@ public:
         CON_PUTC = 0x42
     };
 
+    enum InterruptCauses: uint64 {
+        timer = (uint64) 1 << 63 | 0x1,
+        hardware = (uint64) 1 << 63 | 0x9,
+        illegalInstr = (uint64) 0x2,
+        illegalAddrW = (uint64) 0x7,
+        illegalAddrR = (uint64) 0x5,
+        userCall = (uint64) 0x8,
+        sysCall = (uint64) 0x9
+    };
+
     enum HardwareEntries: uint64 {
         IRQ_CONS = 0x0a,
     };

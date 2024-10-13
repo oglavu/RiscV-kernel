@@ -47,6 +47,7 @@ void PCB::dispatch() {
     if (!newR || newR == oldR) return;
 
     PCB::runningThread = newR;
+    PCB::resetCurPeriod();
     PCB::runningThread->setState(ThreadState::Running);
     PCB::contextSwitch(&oldR->context, &newR->context);
 
