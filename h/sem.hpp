@@ -17,17 +17,6 @@ private:
     Queue<PCB>* blocked;
     static Queue<SEM>* deadSems;
 
-    struct DataPack {
-        DataPack* next = nullptr;
-        SEM* sem;
-        PCB* thr;
-        time_t timeRel;
-
-        void* operator new(size_t sz);
-        void operator delete(void* p);
-        void* operator new[](size_t sz) = delete;
-        void operator delete[](void* p) = delete;
-    };
 
     explicit SEM(uint32 val):
             n(val), blocked(new Queue<PCB>()) {}
@@ -37,18 +26,14 @@ private:
     int close();
 
 public:
-    static DataPack* timed;
-    static time_t timeAbs;
-
-    void removeBlocked();
 
     static int createSemaphore(SEM** handle, unsigned init);
     static int closeSemaphore(SEM* handle);
-    static int timedWait(SEM* handle, time_t time);
-    static int tryWait(SEM* handle);
 
     int wait();
     int signal();
+    int tryWait();
+    int timedWait(time_t time);
     uint32 value() const { return n; }
 
     ~SEM() {

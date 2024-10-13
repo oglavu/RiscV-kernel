@@ -4,18 +4,27 @@
 
 #include "../h/pcb.hpp"
 
+ThreadState
+        ThreadState::Running,
+        ThreadState::Ready,
+        ThreadState::Timed,
+        ThreadState::Sleeping,
+        ThreadState::Blocked,
+        ThreadState::Terminated;
+
 uint64 PCB::curPeriod = 0;
 bool PCB::initialised = false;
 PCB* PCB::runningThread = nullptr;
 Queue<PCB>* PCB::deadThreads = nullptr;
 PCB* PCB::mainThread = nullptr;
 
-PCB::PCB(PCB::ThreadBody bodyy, void *arg, uint64* allocStack):
-                    body(bodyy), bodyArguement(arg) {
+PCB::PCB(ThreadBody body, void *arg, uint64* allocStack):
+        pArg1(arg), pArg2((void*) body) {
     if (!PCB::initialised)
         PCB::init();
-    // stack grows downwards, so first location is top of allocated space
-    state = ThreadState::Ready;
+
+    // stack grows downwards
+    // so first location is top of allocated space
     stackPtr = allocStack;
     parentThread = PCB::runningThread;
 
@@ -29,23 +38,26 @@ PCB::PCB(PCB::ThreadBody bodyy, void *arg, uint64* allocStack):
 void PCB::dispatch() {
     PCB *oldR = PCB::runningThread;
     if (!oldR) return;
-    if (oldR->state == ThreadState::Running) {
-        oldR->state = ThreadState::Ready;
+    if (oldR->isRunning()) {
+        oldR->setState(ThreadState::Ready);
         Scheduler::put(oldR);
     }
 
     PCB* newR = Scheduler::get();
+    if (!newR || newR == oldR) return;
 
-    if (newR) {
-        PCB::runningThread = newR;
-        PCB::runningThread->state = ThreadState::Running;
-        PCB::contextSwitch(&oldR->context, &newR->context);
-    }
+    PCB::runningThread = newR;
+    PCB::runningThread->setState(ThreadState::Running);
+    PCB::contextSwitch(&oldR->context, &newR->context);
+
 }
 
 void PCB::wrap() {
     RiscV::popSppSpie();
-    runningThread->body(runningThread->bodyArguement);
+    auto pf = (ThreadBody) runningThread->pArg2;
+    // has to be done manually first time
+    runningThread->pArg2 = &ThreadState::Running;
+    pf(runningThread->pArg1);
     PCB::exitThread();
 }
 
@@ -56,13 +68,14 @@ void PCB::init() {
 
     // setting up main kernel thread context
     PCB::mainThread->parentThread = nullptr;
-    PCB::mainThread->body = nullptr;
-    PCB::mainThread->bodyArguement = nullptr;
+    PCB::mainThread->pArg1 = nullptr;
+    PCB::mainThread->pArg2 = nullptr;
+    PCB::mainThread->pArg3 = nullptr;
     PCB::mainThread->stackPtr = nullptr;
-    PCB::mainThread->timeSlice = DEFAULT_TIME_SLICE;
+    PCB::mainThread->timeLeft = DEFAULT_TIME_SLICE;
     // context will anyway be changed after first dispatch
     PCB::runningThread = PCB::mainThread;
-    PCB::runningThread->state = ThreadState::Running;
+    PCB::runningThread->pArg2 = &ThreadState::Running;
 
     PCB::deadThreads = new Queue<PCB>();
     PCB::initialised = true;
@@ -77,8 +90,8 @@ int PCB::createThread(PCB **handle, PCB::ThreadBody bodyy, void *arg, uint64* al
 }
 
 int PCB::exitThread() {
-    if (PCB::runningThread->state != ThreadState::Running) return -1;
-    PCB::runningThread->state = ThreadState::Terminated;
+    if (!PCB::runningThread->isRunning()) return -1;
+    PCB::runningThread->setState(ThreadState::Terminated);
     PCB::deadThreads->push(PCB::runningThread);
     PCB::yield();
     return 0;
@@ -92,9 +105,12 @@ void PCB::yield() {
 int PCB::sleepThread(time_t time) {
     if (time == 0) return -1;
 
-    PCB::runningThread->suspend();
-    Scheduler::sleep(PCB::runningThread, time);
-    PCB::yield();
+    PCB::runningThread->setState(ThreadState::Sleeping);
+    PCB::runningThread->setTimeLeft(Scheduler::getTime() + time);
+    Scheduler::putToWait(PCB::runningThread);
+    PCB::dispatch();
+
+    PCB::runningThread->setTimeLeft();
 
     return 0;
 
@@ -110,13 +126,15 @@ void PCB::operator delete(void *p) {
 
 PCB::~PCB() {
     delete stackPtr;
-    this->state = ThreadState::Terminated;
+    // has to be done manually
+    this->pArg2 = &ThreadState::Terminated;
 }
 
 void PCB::outputThreadBody(void *status) {
     while(*(bool*)status) {
         _buffer::outBufferFlush();
-        PCB::yield();
+        PCB::dispatch();
     }
 }
+
 

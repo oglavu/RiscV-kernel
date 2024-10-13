@@ -5,7 +5,7 @@
 #ifndef PROJEKAT__PRINT_HPP
 #define PROJEKAT__PRINT_HPP
 
-#include "../h/syscall_c.h"
+#include "../h/_buffer.hpp"
 
 static const char _digits[] = "0123456789ABCDEF";
 

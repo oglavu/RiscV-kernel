@@ -11,10 +11,10 @@
 
 class testThread: public Thread {
 private:
-    Semaphore* sem;
+    sem_t sem;
     const int id;
 public:
-    testThread(Semaphore* sem, const int id): sem(sem), id(id) { }
+    testThread(sem_t sem, const int id): sem(sem), id(id) { }
     void run() override;
 };
 

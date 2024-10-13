@@ -56,25 +56,11 @@ namespace interruptHandlers {
         RiscV::mc_sip(RiscV::BitMaskSip::SIP_SSIP);
 
         if (!PCB::runningThread) return;
-        if (SEM::timed && SEM::timeAbs != 0) SEM::timeAbs--;
 
-        while (SEM::timed && SEM::timeAbs == 0) {
-            SEM::timed->thr->setTimeOut();
-            SEM::timed->sem->removeBlocked();
-            Scheduler::put(SEM::timed->thr);
-
-            SEM::timeAbs = (SEM::timed->next) ? SEM::timed->next->timeRel : 0;
-            int *ptr = (int *) SEM::timed;
-            SEM::timed = SEM::timed->next;
-            delete ptr;
-        }
-
-
-        Scheduler::incTimer();
         Scheduler::alarm();
 
         uint64 n = PCB::incCurPeriod();
-        if (n >= PCB::runningThread->getPeriods()) {
+        if (n >= PCB::runningThread->getTimeLeft()) {
             PCB::resetCurPeriod();
             PCB::dispatch();
         }
@@ -202,12 +188,12 @@ namespace interruptHandlers {
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_TMDW:
-                retVal = SEM::timedWait((SEM*)a1, (time_t)a2);
+                retVal = ((SEM*)a1)->timedWait((time_t)a2);
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
             case (uint64) RiscV::CodeOps::SEM_TRYW:
-                retVal = SEM::tryWait((SEM*)a1);
+                retVal = ((SEM*)a1)->tryWait();
                 __asm__ volatile ("mv t0, %0" : : "r"(retVal));
                 __asm__ volatile ("sd t0, 80(fp)");
                 break;
@@ -229,7 +215,7 @@ namespace interruptHandlers {
                 return;
         }
 
-
+/*
         // sync context switch on syscall
         bool DispatchCondition = (codeOp != RiscV::THR_YIEL &&
                                  codeOp != RiscV::THR_SLEE &&
@@ -243,6 +229,7 @@ namespace interruptHandlers {
             PCB::resetCurPeriod();
             PCB::dispatch();
         }
+        */
 
         RiscV::sstatusW(sstatus);
         RiscV::sepcW(sepc);

@@ -3,11 +3,12 @@
 //
 
 #include "../h/Scheduler.hpp"
+#include "../h/pcb.hpp"
 
 bool Scheduler::initialised = false;
-uint64 Scheduler::timer = 0;
 Queue<PCB>* Scheduler::readyQueue = nullptr;
-PriorityQueue<Scheduler::SleepNode>* Scheduler::sleepingPQ = nullptr;
+uint64 Scheduler::timer = 0;
+PriorityQueue<PCB>* Scheduler::waitingPQ = nullptr;
 
 PCB *Scheduler::get() {
     return (Scheduler::initialised) ?
@@ -20,49 +21,46 @@ void Scheduler::put(PCB * data) {
     readyQueue->push(data);
 }
 
-void Scheduler::sleep(PCB* thread,time_t time) {
-    SleepNode* node = new SleepNode;
-    node->delay = Scheduler::timer + time;
-    node->thread = thread;
-
-    sleepingPQ->push(node);
+PriorityQueue<PCB>::Key Scheduler::putToWait(PCB *data) {
+    if (!Scheduler::initialised)
+        Scheduler::init();
+    return waitingPQ->push(data);
 }
 
+void Scheduler::callOut(PriorityQueue<PCB>::Key key, PCB* thread) {
+    if (!waitingPQ || waitingPQ->isEmpty()) return;
+    PriorityQueue<PCB>::remove(key, thread);
+}
 
 void Scheduler::alarm() {
-    if (!sleepingPQ || !sleepingPQ->peekFirst()) return;
-    if (Scheduler::timer >= sleepingPQ->peekFirst()->delay) {
-        SleepNode* wokenUp = sleepingPQ->pop();
-        Scheduler::put(wokenUp->thread);
-        delete wokenUp;
-    }
-}
+    if (!waitingPQ) return;
+    if (waitingPQ->isEmpty()) return;
 
-void Scheduler::clear() {
-    if (!sleepingPQ || sleepingPQ->isEmpty()) return;
-    while(Scheduler::sleepingPQ->peekFirst()){
-        delete sleepingPQ->pop();
+    Scheduler::timer++;
+
+    while (!waitingPQ->isEmpty() &&
+            Scheduler::timer > waitingPQ->peekFirst()->getTimeLeft()) {
+        PCB* thread = waitingPQ->pop();
+
+        if (thread->isTimed()) {
+            auto key = (PriorityQueue<PCB>::Key) thread->getSemaphoreKey();
+            PriorityQueue<PCB>::remove(key, thread);
+        }
+
+        Scheduler::put(thread);
     }
-    delete sleepingPQ;
 }
 
 void Scheduler::init() {
     if (Scheduler::initialised) return;
+
+    PriorityQueue<PCB>::ComparatorFunc pf = [] (const PCB* t1, const PCB* t2) -> bool {
+        return t1->getTimeLeft() >= t2->getTimeLeft();
+    };
+
     // init queue for ready threads
     Scheduler::readyQueue = new Queue<PCB>();
     // init queue for sleeping threads
-    Scheduler::sleepingPQ = new PriorityQueue<SleepNode>(&SleepNode::GRT);
+    Scheduler::waitingPQ = new PriorityQueue<PCB>(pf);
     Scheduler::initialised = true;
-}
-
-Scheduler::~Scheduler() {
-    Scheduler::clear();
-}
-
-void *Scheduler::SleepNode::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
-}
-
-void Scheduler::SleepNode::operator delete(void *p) {
-    MemoryAllocator::mem_free(p);
 }

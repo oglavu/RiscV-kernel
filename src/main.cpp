@@ -9,10 +9,9 @@
 extern void userMain();
 
 
-void userMainWrapper(void* userSemaphore) {
+void userMainWrapper(void*) {
     userMain();
     KprintString("UserMain finished\n");
-    ((SEM*)userSemaphore)->signal();
 }
 
 
@@ -43,7 +42,7 @@ int main() {
 
     // starting user
     PCB::yield();
-    userSemaphore->wait();
+    while(!userMainThread->isTerminated()) PCB::yield();
 
     // cleaning
     // freeing userSemaphore
@@ -55,23 +54,12 @@ int main() {
     delete _buffer::inBuffer;
     delete _buffer::outBuffer;
 
-    // clearing _sem::timed
-    while(SEM::timed) {
-        delete SEM::timed->thr;
-        SEM::timed = SEM::timed->next;
-    }
 
     // to close outBufferThread
     kernelThreadStatus = false;
     while(!outputThread->isTerminated())
-        thread_dispatch();
-
-    delete outputThread;
-    delete userSemaphore;
-
-    // emptying scheduler
-    Scheduler::clear();
-    MemoryAllocator::mem_free(outputThreadStack);
+        PCB::dispatch();
+    
     RiscV::shutdown();
 
     return 0;

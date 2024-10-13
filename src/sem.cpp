@@ -4,9 +4,7 @@
 
 #include "../h/sem.hpp"
 
-SEM::DataPack* SEM::timed = nullptr;
 Queue<SEM>* SEM::deadSems = nullptr;
-time_t SEM::timeAbs = 0;
 
 int SEM::wait() {
     if (closed)
@@ -32,40 +30,19 @@ int SEM::signal() {
 
 void SEM::block() {
     blocked->push( PCB::runningThread);
-    PCB::runningThread->suspend();
-    PCB::yield();
+    PCB::runningThread->setState(ThreadState::Blocked);
+    PCB::dispatch();
 }
 
 void SEM::unblock(){
-    PCB* cur = blocked->pop();
-    DataPack* i = SEM::timed, *j = nullptr;
-    if (i) {
-        while (i && i->thr != cur) {
-            j = i;
-            i = i->next;
-        }
-        if (i && i->thr == cur) {
-            // thr found
-            if (j) {
-                if (i->next) i->next->timeRel += i->timeRel;
-                j->next = i->next;
-                delete i;
-            } else {
-                SEM::DataPack* ptr = SEM::timed;
-                SEM::timed = SEM::timed->next;
-                delete ptr;
-                if (SEM::timed) {
-                    SEM::timeAbs = SEM::timed->timeRel;
-                    SEM::timed->timeRel = 0;
-                } else
-                    SEM::timeAbs = 0;
-            }
-        }
+    PCB* thread = blocked->pop();
+    if (thread->isTimed()) {
+        auto key = (PriorityQueue<PCB>::Key) thread->getWaitingKey();
+        Scheduler::callOut(key, thread);
+    } else {
+        thread->setState(ThreadState::Ready);
     }
-
-
-    cur->unsuspend();
-    Scheduler::put(cur);
+    Scheduler::put(thread);
 }
 
 int SEM::close() {
@@ -74,15 +51,12 @@ int SEM::close() {
 
     closed = true;
 
-    while(blocked->peekFirst()) {
+    while(!blocked->isEmpty()) {
         PCB* cur = blocked->pop();
-        cur->unsuspend();
+        auto key = (PriorityQueue<PCB>::Key) cur->getWaitingKey();
+        Scheduler::callOut(key, cur);
         Scheduler::put(cur);
     }
-
-    if (!SEM::deadSems)
-        SEM::deadSems = new Queue<SEM>();
-    SEM::deadSems->push(this);
 
     return 0;
 }
@@ -100,68 +74,47 @@ int SEM::closeSemaphore(SEM *handle) {
     return handle->close();
 }
 
-int SEM::timedWait(SEM *handle, time_t time) {
-    if (handle->closed)
+int SEM::timedWait(time_t time) {
+    if (closed)
         return -1;
 
-    if ((int) --handle->n < 0) {
-        DataPack* dp = new DataPack;
-        dp->sem = handle; dp->thr = PCB::runningThread;
-        if (!SEM::timed || SEM::timeAbs > time) {
-            dp->next = SEM::timed;
-            if (SEM::timed)
-                SEM::timed->timeRel = SEM::timeAbs - time;
-            SEM::timed = dp;
-            SEM::timed->timeRel = 0;
-            SEM::timeAbs = time;
-        } else {
-            time -= SEM::timeAbs;
-            SEM::DataPack *cur = SEM::timed;
-            while (cur->next && cur->next->timeRel < time) {
-                cur = cur->next;
-                time -= cur->timeRel;
-            }
-            dp->timeRel = time;
-            dp->next = cur->next;
-            cur->next = dp;
+    int ret = 0;
+    if ((int) --n < 0) {
+
+        PCB::runningThread->setState(ThreadState::Timed);
+        PCB::runningThread->setTimeLeft(Scheduler::getTime() + time);
+
+        Queue<PCB>::Key semKey = blocked->push(PCB::runningThread);
+        PCB::runningThread->setSemaphoreKey(semKey);
+
+        PriorityQueue<PCB>::Key waitKey = Scheduler::putToWait(PCB::runningThread);
+        PCB::runningThread->setWaitingKey(waitKey);
+
+        PCB::dispatch();
+
+        if (closed) {
+            ret = -1;
+            n++;
+        } else if (Scheduler::getTime() > PCB::runningThread->getTimeLeft()) {
+            // timeout
+            ret = -2;
+            n++;
         }
 
-        handle->blocked->push(PCB::runningThread);
-        PCB::runningThread->suspend();
-        PCB::yield();
-
-
-        if (PCB::runningThread->isTimeOut()) {
-            handle->n++;
-        }
+        PCB::runningThread->setTimeLeft();
 
     }
-
-    int ret = (handle->closed) ? -1 : (PCB::runningThread->isTimeOut()) ? -2 : 0;
-    PCB::runningThread->resetTimeOut();
 
     return ret;
 }
 
-void SEM::removeBlocked() {
-    blocked->remove(SEM::timed->thr);
-}
 
-int SEM::tryWait(SEM *handle) {
-    if (handle->closed)
+int SEM::tryWait() {
+    if (closed)
         return -1;
 
-    return ((int)handle->n > 0);
+    return ((int)n > 0);
 }
-
-void *SEM::DataPack::operator new(size_t sz) {
-    return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
-}
-
-void SEM::DataPack::operator delete(void *p) {
-    MemoryAllocator::mem_free(p);
-}
-
 
 void *SEM::operator new(size_t sz) {
     return MemoryAllocator::mem_alloc((sz + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
