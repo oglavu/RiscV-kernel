@@ -30,7 +30,7 @@ int main() {
     PCB* userMainThread, *outputThread;
     bool kernelThreadStatus = true;
     uint64* outputThreadStack = (uint64*) MemoryAllocator::mem_alloc(512 * sizeof(uint64));
-    PCB::createThread(&outputThread, &PCB::outputThreadBody, &kernelThreadStatus, outputThreadStack);
+    PCB::createThread(&outputThread, &KoutputThreadBody, &kernelThreadStatus, outputThreadStack);
     PCB::yield();
 
     RiscV::userMode = true;

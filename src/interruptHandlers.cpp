@@ -97,11 +97,11 @@ namespace interruptHandlers {
                 retVal = PCB::exitThread();
                 break;
             case (uint64) RiscV::CodeOps::THR_YIEL:
-                PCB::resetCurPeriod();
                 PCB::dispatch();
                 break;
             case (uint64) RiscV::CodeOps::SEM_OPEN:
                 retVal = SEM::createSemaphore((SEM **) a1, (unsigned) a2);
+                break;
             case (uint64) RiscV::CodeOps::SEM_CLOS:
                 retVal = SEM::closeSemaphore((SEM *) a1);
                 break;

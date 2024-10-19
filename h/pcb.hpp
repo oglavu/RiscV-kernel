@@ -53,7 +53,6 @@ private:
 
     uint64* stackPtr;
     static uint64 curPeriod;
-    static Queue<PCB>* deadThreads;
 
     explicit PCB(PCB::ThreadBody bodyy, void* arg, uint64* stackStartAddrParam);
     static void contextSwitch(PCB::Context* oldCont, PCB::Context* newCont);
@@ -73,8 +72,6 @@ public:
     static void init();
     static PCB* runningThread;
     static PCB* mainThread;
-
-    static void outputThreadBody(void* status);
 
     // DO NOT use setState
     // before starting thread

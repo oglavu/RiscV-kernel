@@ -38,3 +38,10 @@ void KprintInt(int num, int base, int sgn) {
     while (--i >= 0)
         _buffer::outBuffer->putc(buf[i]);
 }
+
+void KoutputThreadBody(void *status) {
+    while(*(bool*)status) {
+        _buffer::outBufferFlush();
+        PCB::dispatch();
+    }
+}

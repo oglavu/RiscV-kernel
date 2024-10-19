@@ -18,7 +18,8 @@ PCB *Scheduler::get() {
 void Scheduler::put(PCB * data) {
     if (!Scheduler::initialised)
         Scheduler::init();
-    readyQueue->push(data);
+    if (data)
+        readyQueue->push(data);
 }
 
 PriorityQueue<PCB>::Key Scheduler::putToWait(PCB *data) {

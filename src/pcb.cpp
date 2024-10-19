@@ -15,7 +15,6 @@ ThreadState
 uint64 PCB::curPeriod = 0;
 bool PCB::initialised = false;
 PCB* PCB::runningThread = nullptr;
-Queue<PCB>* PCB::deadThreads = nullptr;
 PCB* PCB::mainThread = nullptr;
 
 PCB::PCB(ThreadBody body, void *arg, uint64* allocStack):
@@ -78,7 +77,6 @@ void PCB::init() {
     PCB::runningThread = PCB::mainThread;
     PCB::runningThread->pArg2 = &ThreadState::Running;
 
-    PCB::deadThreads = new Queue<PCB>();
     PCB::initialised = true;
 }
 
@@ -93,7 +91,6 @@ int PCB::createThread(PCB **handle, PCB::ThreadBody bodyy, void *arg, uint64* al
 int PCB::exitThread() {
     if (!PCB::runningThread->isRunning()) return -1;
     PCB::runningThread->setState(ThreadState::Terminated);
-    PCB::deadThreads->push(PCB::runningThread);
     PCB::yield();
     return 0;
 }
@@ -130,12 +127,3 @@ PCB::~PCB() {
     // has to be done manually
     this->pArg2 = &ThreadState::Terminated;
 }
-
-void PCB::outputThreadBody(void *status) {
-    while(*(bool*)status) {
-        _buffer::outBufferFlush();
-        PCB::dispatch();
-    }
-}
-
-

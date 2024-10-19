@@ -14,16 +14,15 @@ class SEM {
 private:
     uint32 n;
     bool closed = false;
-    Queue<PCB>* blocked;
+    Queue<PCB> blocked;
     static Queue<SEM>* deadSems;
 
 
     explicit SEM(uint32 val):
-            n(val), blocked(new Queue<PCB>()) {}
+            n(val), blocked(Queue<PCB>()) {}
 
     void block();
     void unblock();
-    int close();
 
 public:
 
@@ -37,8 +36,7 @@ public:
     uint32 value() const { return n; }
 
     ~SEM() {
-        close();
-        delete blocked;
+        SEM::closeSemaphore(this);
     }
 
     void* operator new(size_t sz);

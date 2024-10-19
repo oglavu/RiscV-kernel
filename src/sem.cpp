@@ -4,8 +4,6 @@
 
 #include "../h/sem.hpp"
 
-Queue<SEM>* SEM::deadSems = nullptr;
-
 int SEM::wait() {
     if (closed)
         return -1;
@@ -29,13 +27,13 @@ int SEM::signal() {
 }
 
 void SEM::block() {
-    blocked->push( PCB::runningThread);
+    blocked.push( PCB::runningThread);
     PCB::runningThread->setState(ThreadState::Blocked);
     PCB::dispatch();
 }
 
 void SEM::unblock(){
-    PCB* thread = blocked->pop();
+    PCB* thread = blocked.pop();
     if (thread->isTimed()) {
         auto key = (PriorityQueue<PCB>::Key) thread->getWaitingKey();
         Scheduler::callOut(key, thread);
@@ -43,22 +41,6 @@ void SEM::unblock(){
         thread->setState(ThreadState::Ready);
     }
     Scheduler::put(thread);
-}
-
-int SEM::close() {
-    if (closed)
-        return -1;
-
-    closed = true;
-
-    while(!blocked->isEmpty()) {
-        PCB* cur = blocked->pop();
-        auto key = (PriorityQueue<PCB>::Key) cur->getWaitingKey();
-        Scheduler::callOut(key, cur);
-        Scheduler::put(cur);
-    }
-
-    return 0;
 }
 
 
@@ -71,7 +53,22 @@ int SEM::createSemaphore(SEM **handle, unsigned int init) {
 
 int SEM::closeSemaphore(SEM *handle) {
     if (!handle) return -1;
-    return handle->close();
+    if (handle->closed)
+        return -2;
+
+    handle->closed = true;
+
+    while(!handle->blocked.isEmpty()) {
+        // Scheduler is FIFO <=> LILO
+        PCB* thread = handle->blocked.pop();
+        // if thread isn't timed, key is nullptr
+        // no effect when calling Scheduler::put and Scheduler::callOut with nullptr
+        auto key = (PriorityQueue<PCB>::Key) thread->getWaitingKey();
+        Scheduler::callOut(key, thread);
+        Scheduler::put(thread);
+    }
+
+    return 0;
 }
 
 int SEM::timedWait(time_t time) {
@@ -84,7 +81,7 @@ int SEM::timedWait(time_t time) {
         PCB::runningThread->setState(ThreadState::Timed);
         PCB::runningThread->setTimeLeft(Scheduler::getTime() + time);
 
-        Queue<PCB>::Key semKey = blocked->push(PCB::runningThread);
+        Queue<PCB>::Key semKey = blocked.push(PCB::runningThread);
         PCB::runningThread->setSemaphoreKey(semKey);
 
         PriorityQueue<PCB>::Key waitKey = Scheduler::putToWait(PCB::runningThread);

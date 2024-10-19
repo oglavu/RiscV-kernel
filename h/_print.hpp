@@ -14,4 +14,6 @@ void KprintString(char const* string);
 // sign = 0 means don't check sign
 void KprintInt(int num, int base = 10, int sgn = 0);
 
+void KoutputThreadBody(void *status);
+
 #endif //PROJEKAT__PRINT_HPP
