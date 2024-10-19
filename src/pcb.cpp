@@ -81,9 +81,10 @@ void PCB::init() {
 }
 
 // stack is allocated in ABI
-int PCB::createThread(PCB **handle, PCB::ThreadBody bodyy, void *arg, uint64* allocStackParam) {
-    PCB* t = new PCB(bodyy, arg, allocStackParam);
-    if (!t || !allocStackParam) return -1;
+int PCB::createThread(PCB **handle, PCB::ThreadBody bodyy, void *arg, uint64* stackPtr) {
+    if (!stackPtr) return -3;
+    PCB* t = new PCB(bodyy, arg, stackPtr);
+    if (!t) return -4;
     *handle = t;
     return 0;
 }

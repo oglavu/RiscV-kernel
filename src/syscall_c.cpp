@@ -4,162 +4,98 @@
 
 #include "../h/syscall_c.h"
 
+static uint64 systemCall(uint64 arg0 = 0,
+                         uint64 arg1 = 0,
+                         uint64 arg2 = 0,
+                         uint64 arg3 = 0,
+                         uint64 arg4 = 0) {
+    // standardizes system calls
+    // links variables to registers
+    // -> a0 var always has same value as reg a0
+    register uint64 a0 asm ("a0") = arg0;
+	register uint64 a1 asm ("a1") = arg1;
+	register uint64 a2 asm ("a2") = arg2;
+	register uint64 a3 asm ("a3") = arg3;
+    register uint64 a4 asm ("a4") = arg4;
+
+    // tell compiler that a0 can be both rw
+    // "memory" tells not to cache aX vals
+    asm volatile ("ecall"
+		      : "+r" (a0)
+		      : "r" (a1), "r" (a2), "r" (a3), "r" (a4)
+		      : "memory");
+	return a0;
+}
 
 void* mem_alloc(size_t size) {
     // convert bytes to blocks
-    RiscV::a1W((size + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE);
-    RiscV::a0W(RiscV::CodeOps::MEM_ALOC);
-
-    __asm__ volatile ("ecall");
-
-    uint64 volatile retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (void*) retVal;
+    size_t blocks = (size + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE;
+    return (void*) systemCall(RiscV::MEM_ALOC, blocks);
 }
 
 
 int mem_free(void* ptr){
-    RiscV::a1W((uint64)ptr);
-    RiscV::a0W(RiscV::CodeOps::MEM_FREE);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::MEM_FREE, (uint64)ptr);
 }
 
 int thread_create(thread_t* handle,
                   void(*start_routine) (void*),
                   void* arg ) {
-    uint64* stack = nullptr;
-    if (start_routine) {
-        stack = (uint64*)mem_alloc(sizeof(uint64)*DEFAULT_STACK_SIZE);
-        if (!stack) return -1;
-    }
-    RiscV::a4W((uint64)stack);
-    RiscV::a3W((uint64)arg);
-    RiscV::a2W((uint64)start_routine);
-    RiscV::a1W((uint64)handle);
-    RiscV::a0W((uint64)RiscV::CodeOps::THR_CREA);
+    if (!start_routine)
+        return -1;
 
-    __asm__ volatile ("ecall");
+    uint64* stack = (uint64*)mem_alloc(sizeof(uint64)*DEFAULT_STACK_SIZE);
+    if (!stack)
+        return -2;
 
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::THR_CREA,
+                            (uint64)handle,
+                            (uint64)start_routine,
+                            (uint64)arg,
+                            (uint64)stack);
 }
 
 int thread_exit() {
-    RiscV::a0W(RiscV::CodeOps::THR_EXIT);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::THR_EXIT);
 }
 
 void thread_dispatch() {
-    RiscV::a0W(RiscV::CodeOps::THR_YIEL);
-
-    __asm__ volatile ("ecall");
+    systemCall(RiscV::THR_YIEL);
 }
 
 int sem_open (sem_t* handle, unsigned init ) {
-    RiscV::a2W((uint64) init);
-    RiscV::a1W((uint64) handle);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_OPEN);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_OPEN, (uint64)handle, (uint64) init);
 }
 
 int sem_close (sem_t handle) {
-    RiscV::a1W((uint64) handle);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_CLOS);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_CLOS, (uint64)handle);
 }
 
 int sem_wait (sem_t id){
-    RiscV::a1W((uint64) id);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_WAIT);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_WAIT, (uint64)id);
 }
 int sem_signal (sem_t id) {
-
-    RiscV::a1W((uint64) id);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_SIGN);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_SIGN, (uint64)id);
 }
 
 int sem_timedwait(sem_t id, time_t time) {
-    RiscV::a2W((uint64) time);
-    RiscV::a1W((uint64) id);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_TMDW);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_TMDW, (uint64)id, (uint64)time);
 }
 
 int sem_trywait(sem_t id) {
-    RiscV::a1W((uint64) id);
-    RiscV::a0W((uint64) RiscV::CodeOps::SEM_TRYW);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::SEM_TRYW, (uint64)id);
 }
 
 int time_sleep (time_t time) {
-    RiscV::a1W((uint64) time);
-    RiscV::a0W((uint64) RiscV::CodeOps::THR_SLEE);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (int) systemCall(RiscV::THR_SLEE, (uint64)time);
 }
 
 char getc() {
-    RiscV::a0W((uint64) RiscV::CodeOps::CON_GETC);
-
-    __asm__ volatile ("ecall");
-
-    uint64 retVal;
-    __asm__ volatile ("mv %0, a0" : "=r"(retVal));
-    return (int) retVal;
+    return (char) systemCall(RiscV::CON_GETC);
 }
 
 void putc(char c) {
-    RiscV::a1W((uint64) c);
-    RiscV::a0W((uint64) RiscV::CodeOps::CON_PUTC);
-
-    __asm__ volatile ("ecall");
+    systemCall(RiscV::CON_PUTC, (uint64)c);
 }
 
 
