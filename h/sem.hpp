@@ -12,17 +12,16 @@
 
 class SEM {
 private:
-    uint32 n;
-    bool closed = false;
-    Queue<PCB> blocked;
-    static Queue<SEM>* deadSems;
-
+    int m_value;
+    bool m_closed = false;
+    Queue<PCB> m_blocked;
 
     explicit SEM(uint32 val):
-            n(val), blocked(Queue<PCB>()) {}
+            m_value((int)val) {}
 
     void block();
     void unblock();
+    bool freeAttempt();
 
 public:
 
@@ -33,7 +32,7 @@ public:
     int signal();
     int tryWait();
     int timedWait(time_t time);
-    uint32 value() const { return n; }
+    int value() const { return m_value; }
 
     ~SEM() {
         SEM::closeSemaphore(this);

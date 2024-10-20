@@ -60,7 +60,8 @@ void timedWait_test() {
 
     for (int i=0; i<N; i++) {
         waitForAll->wait();
-        if (i==0) sem_close(sem);
     }
+
+    sem_close(sem);
 
 }

@@ -5,21 +5,26 @@
 #include "../h/sem.hpp"
 
 int SEM::wait() {
-    if (closed)
+    if (m_closed)
         return -1;
 
-    if ((int) --n < 0) {
+    // save m_closed value in case
+    // freeAttempt actually frees sem
+    bool closed = m_closed;
+    if (--m_value < 0) {
         // no free slots
         block();
+        closed = freeAttempt();
     }
+
     return closed;
 }
 
 int SEM::signal() {
-    if (closed)
+    if (m_closed)
         return -1;
 
-    if ((int) ++n <= 0) {
+    if (++m_value <= 0) {
         unblock();
     }
 
@@ -27,13 +32,13 @@ int SEM::signal() {
 }
 
 void SEM::block() {
-    blocked.push( PCB::runningThread);
+    m_blocked.push(PCB::runningThread);
     PCB::runningThread->setState(ThreadState::Blocked);
     PCB::dispatch();
 }
 
 void SEM::unblock(){
-    PCB* thread = blocked.pop();
+    PCB* thread = m_blocked.pop();
     if (thread->isTimed()) {
         auto key = (PriorityQueue<PCB>::Key) thread->getWaitingKey();
         Scheduler::callOut(key, thread);
@@ -41,6 +46,16 @@ void SEM::unblock(){
         thread->setState(ThreadState::Ready);
     }
     Scheduler::put(thread);
+}
+
+bool SEM::freeAttempt() {
+    // if this is the last unblocked thread
+    // free semaphore resources
+    if (m_closed && ++m_value == 0) {
+        delete this;
+        return true;
+    }
+    return false;
 }
 
 
@@ -53,14 +68,14 @@ int SEM::createSemaphore(SEM **handle, unsigned int init) {
 
 int SEM::closeSemaphore(SEM *handle) {
     if (!handle) return -1;
-    if (handle->closed)
+    if (handle->m_closed)
         return -2;
 
-    handle->closed = true;
+    handle->m_closed = true;
 
-    while(!handle->blocked.isEmpty()) {
+    while(!handle->m_blocked.isEmpty()) {
         // Scheduler is FIFO <=> LILO
-        PCB* thread = handle->blocked.pop();
+        PCB* thread = handle->m_blocked.pop();
         // if thread isn't timed, key is nullptr
         // no effect when calling Scheduler::put and Scheduler::callOut with nullptr
         auto key = (PriorityQueue<PCB>::Key) thread->getWaitingKey();
@@ -72,16 +87,16 @@ int SEM::closeSemaphore(SEM *handle) {
 }
 
 int SEM::timedWait(time_t time) {
-    if (closed)
+    if (m_closed)
         return -1;
 
     int ret = 0;
-    if ((int) --n < 0) {
+    if (--m_value < 0) {
 
         PCB::runningThread->setState(ThreadState::Timed);
         PCB::runningThread->setTimeLeft(Scheduler::getTime() + time);
 
-        Queue<PCB>::Key semKey = blocked.push(PCB::runningThread);
+        Queue<PCB>::Key semKey = m_blocked.push(PCB::runningThread);
         PCB::runningThread->setSemaphoreKey(semKey);
 
         PriorityQueue<PCB>::Key waitKey = Scheduler::putToWait(PCB::runningThread);
@@ -89,13 +104,13 @@ int SEM::timedWait(time_t time) {
 
         PCB::dispatch();
 
-        if (closed) {
+        if (m_closed) {
             ret = -1;
-            n++;
+            freeAttempt();
         } else if (Scheduler::getTime() > PCB::runningThread->getTimeLeft()) {
             // timeout
             ret = -2;
-            n++;
+            m_value++;
         }
 
         PCB::runningThread->setTimeLeft();
@@ -107,10 +122,10 @@ int SEM::timedWait(time_t time) {
 
 
 int SEM::tryWait() {
-    if (closed)
+    if (m_closed)
         return -1;
 
-    return ((int)n > 0);
+    return (m_value > 0);
 }
 
 void *SEM::operator new(size_t sz) {
